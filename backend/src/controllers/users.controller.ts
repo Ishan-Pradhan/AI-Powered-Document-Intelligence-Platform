@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError"
 import type { Request, Response } from "express"
 import jwt, { type SignOptions } from "jsonwebtoken"
 import bcrypt from "bcryptjs";
-import { RegisterUserTypes } from "../types/auth.types";
+import { LoginUserTypes, RegisterUserTypes } from "../types/auth.types";
 import { baseCookieOptions } from "../config/cookie.config";
 
 
@@ -82,3 +82,63 @@ export const registerUser = async(req:Request, res: Response) => {
     return res.status(500).json({ message })
   }
 }
+// Controller function to handle user login
+export const loginUser = async(req:Request, res: Response) => {
+  const { email, password } = req.body as LoginUserTypes
+  try {
+    if(!email || !password) {
+      throw new ApiError(400, "Email and password are required")
+    }
+
+    const user = await userRepository.findByEmail(email)
+    if(!user) {
+      throw new ApiError(400, "Invalid email or password")
+    }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password)
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid user credentials")
+  }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user.id)
+    return res.status(200).cookie("accessToken", accessToken, baseCookieOptions).cookie("refreshToken", refreshToken, baseCookieOptions).json({
+      success: true,
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+      message: "User logged in successfully"
+    })
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({ message: error.message })
+    }
+
+    const message = error instanceof Error ? error.message : "Something went wrong"
+    return res.status(500).json({ message })
+  }
+}
+
+export const logoutUser = async(req:Request, res: Response) => {
+  try {
+    const accessToken = req.cookies.accessToken
+    if (!accessToken) {
+      throw new ApiError(400, "Access token is required")
+    }
+    const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET as string) as { id: string }
+    const user = await userRepository.findById(decoded.id)
+    if (!user) {
+      throw new ApiError(404, "User not found")
+    }
+    user.refreshToken = null
+    await user.save()
+
+    return res.clearCookie("accessToken", baseCookieOptions).clearCookie("refreshToken", baseCookieOptions).json({
+      success: true,
+      message: "User logged out successfully"
+    })
+  }catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({ message: error.message })
+    } }}
