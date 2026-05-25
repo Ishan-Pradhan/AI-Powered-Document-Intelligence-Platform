@@ -83,7 +83,7 @@ export const registerUser = async(req:Request, res: Response) => {
   }
 }
 // Controller function to handle user login
-export const loginUser = async(req:Request, res: Response) => {
+export const loginUser = async(req:Request, res: Response): Promise<Response> => {
   const { email, password } = req.body as LoginUserTypes
   try {
     if(!email || !password) {
@@ -120,25 +120,33 @@ export const loginUser = async(req:Request, res: Response) => {
   }
 }
 
-export const logoutUser = async(req:Request, res: Response) => {
+// Controller function to handle user logout
+export const logoutUser = async(req:Request, res: Response): Promise<Response> => {
   try {
     const accessToken = req.cookies.accessToken
-    if (!accessToken) {
-      throw new ApiError(400, "Access token is required")
-    }
-    const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET as string) as { id: string }
-    const user = await userRepository.findById(decoded.id)
-    if (!user) {
-      throw new ApiError(404, "User not found")
-    }
-    user.refreshToken = null
-    await user.save()
+   
+      if (accessToken) {
+      const decoded = jwt.verify(
+        accessToken,
+        process.env.ACCESS_TOKEN_SECRET as string
+      ) as { id: string };
 
-    return res.clearCookie("accessToken", baseCookieOptions).clearCookie("refreshToken", baseCookieOptions).json({
+      const user = await userRepository.findById(decoded.id);
+
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+    }
+  return  res.clearCookie("accessToken", baseCookieOptions).clearCookie("refreshToken", baseCookieOptions).json({
       success: true,
       message: "User logged out successfully"
     })
   }catch (error) {
     if (error instanceof ApiError) {
       return res.status(error.statusCode).json({ message: error.message })
-    } }}
+    } 
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }}
