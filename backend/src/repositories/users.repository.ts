@@ -6,6 +6,7 @@ export const userRepository = {
     return await User.findAll();
   },
 
+  
   findById: async (id: string) => {
     return await User.findByPk(id);
   },

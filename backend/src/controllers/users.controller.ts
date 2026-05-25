@@ -150,3 +150,60 @@ export const logoutUser = async(req:Request, res: Response): Promise<Response> =
       message: "Internal server error",
     });
   }}
+
+
+  // Controller function to get current user details
+  export const getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const accessToken = req.cookies.accessToken;
+      console.log("access token is ", accessToken)
+      if (!accessToken) {
+        throw new ApiError(401, "Unauthorized: No access token provided");
+      }
+      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET as string) as { id: string };
+      const user = await userRepository.findById(decoded.id
+); 
+
+if(!user) {
+  throw new ApiError(404, "User not found");
+}
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: user?.id,
+        name: user?.name,
+        email: user?.email,
+        isVerified: user?.isVerified,
+      },
+      message: "Current user retrieved successfully"
+    }); } catch (error) {
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ message: error.message });
+      }
+    return res.status(500).json({ message: "Internal server error" })}}
+
+
+// Controller function to refresh access token using refresh token
+export const refreshAccessToken = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      throw new ApiError(401, "Unauthorized: No refresh token provided");
+    }
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as { id: string };
+    const user = await userRepository.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken) {
+      throw new ApiError(401, "Unauthorized: Invalid refresh token");
+    }
+      const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefereshTokens(user.id);
+      return res.status(200).cookie("accessToken", accessToken, baseCookieOptions).cookie("refreshToken", newRefreshToken, baseCookieOptions).json({
+        success: true,
+        data: user,
+        message: "Token refreshed successfully"
+      });
+   }catch (error) {
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ message: error.message });
+      }
+    return res.status(500).json({ message: "Internal server error" });
+   }}
