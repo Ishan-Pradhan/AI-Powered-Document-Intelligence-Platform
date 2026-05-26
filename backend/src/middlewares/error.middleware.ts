@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { ValidationError } from 'sequelize'
 import { ApiError } from '../utils/ApiError'
 
-const errorHandler = (err: any, _req: Request, res: Response, next: NextFunction) => {
+const errorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
   let error = err
 
   if (!(error instanceof ApiError)) {

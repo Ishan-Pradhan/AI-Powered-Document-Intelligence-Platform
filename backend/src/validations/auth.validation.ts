@@ -14,3 +14,15 @@ export const loginSchema = {
     password: z.string().min(1, "Password is required"),
   }),
 };
+
+export const verifyEmailSchema = {
+  query: z.object({
+    token: z.string().min(1, "Verification token is required"),
+  }),
+};
+
+export const resendVerificationEmailSchema = {
+  body: z.object({
+    email: z.email("Invalid email"),
+  }),
+};

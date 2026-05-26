@@ -4,7 +4,7 @@ import { ApiError } from '../utils/ApiError'
 import { AuthRequest, JwtPayload } from '../types/auth.types'
 
 
-export const verifyJWT = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const verifyJWT = async (req: AuthRequest, _res: Response, next: NextFunction) => {
   const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
 
   if (!token) {
