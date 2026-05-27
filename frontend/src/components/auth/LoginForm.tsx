@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 
 import { login } from "@/api/auth"
 import { loginSchema, type LoginInput } from "@/schema/auth.schema"
+import { useAuthStore } from "@/store/auth.store"
 
 import { Button } from "../ui/button"
 import {
@@ -22,6 +23,7 @@ import SocialLogins from "./SocialLogins"
 function LoginForm() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const setUser = useAuthStore((state) => state.setUser)
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -38,7 +40,8 @@ function LoginForm() {
     setSubmitError(null)
 
     try {
-      await login(values)
+      const response = await login(values)
+      setUser(response.data.data)
     } catch (error) {
       const err = error as AxiosError<{ message?: string }>
       setSubmitError(err.response?.data?.message || "Unable to sign in.")

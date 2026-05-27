@@ -3,6 +3,8 @@ import LoginPage from "../pages/Auth/LoginPage";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import RegisterPage from "@/pages/Auth/RegisterPage";
 import EmailVerificationPage from "@/pages/Auth/EmailVerificationPage";
+import VerificationSuccessPage from "@/pages/Auth/VerificationSuccessPage";
+import RequireAuth from "./privateRoutes/isLoggedIn";
 
 
 export const router = createBrowserRouter([
@@ -19,7 +21,16 @@ export const router = createBrowserRouter([
     element: <EmailVerificationPage />,
   },
   {
-    path: "/",
-    element: <DashboardPage />,
+    path: "/verify-success",
+    element: <VerificationSuccessPage />,
+  },
+  {
+    element: <RequireAuth />,
+    children: [
+      {
+        path: "/",
+        element: <DashboardPage />,
+      },
+    ],
   },
 ]);
