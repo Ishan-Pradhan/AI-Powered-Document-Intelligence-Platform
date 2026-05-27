@@ -132,6 +132,9 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
 
     let user = await userRepository.findByEmail(email)
     if (!user) {
+      const userCount = await userRepository.count()
+      const role = userCount === 0 ? "admin" : "user"
+
       // Keep it simple: we store a random password so schema stays unchanged.
       const randomPassword = crypto.randomBytes(32).toString("hex")
       const hashedPassword = await bcrypt.hash(randomPassword, 10)
@@ -141,6 +144,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         isVerified: Boolean(emailVerified),
+        role,
       } as any)
     } else {
       if (emailVerified && !user.isVerified) {
@@ -191,10 +195,14 @@ export const registerUser = async(req:Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
+    const userCount = await userRepository.count()
+    const role = userCount === 0 ? "admin" : "user"
+
     const newUser = await userRepository.create({
       name,
       email,
       password: hashedPassword,
+      role,
     })
 
     // create verification token (valid for 24h) and email it
@@ -331,6 +339,7 @@ if(!user) {
         name: user?.name,
         email: user?.email,
         isVerified: user?.isVerified,
+        role: user?.role,
       },
       message: "Current user retrieved successfully"
     }); } catch (error) {
@@ -366,7 +375,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<R
    }}
 
    //verify email 
-   export const verifyEmail = async (req: Request, res: Response): Promise<Response> => {
+  export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
     try {
       const validatedQuery = req.validated?.query as { token?: unknown } | undefined;
       const token = (validatedQuery?.token ?? (req.query as any)?.token) as unknown;
@@ -392,12 +401,37 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<R
         throw new ApiError(404, "User not found")
       }
 
+      const frontendUrl = process.env.FRONTEND_URL
+      const successRedirectUrl =
+        process.env.EMAIL_VERIFY_SUCCESS_REDIRECT ||
+        (frontendUrl
+          ? `${frontendUrl.replace(/\/$/, "")}/verify-success`
+          : undefined)
+
       if (user.isVerified) {
         await verificationRepository.deleteEmailVerificationsForUser(user.id)
-        return res.status(200).json({
-          success: true,
-          message: "Email already verified",
-        })
+
+        const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+          user.id
+        )
+
+        if (successRedirectUrl) {
+          res
+            .cookie("accessToken", accessToken, baseCookieOptions)
+            .cookie("refreshToken", refreshToken, baseCookieOptions)
+            .redirect(successRedirectUrl)
+          return
+        }
+
+        res
+          .status(200)
+          .cookie("accessToken", accessToken, baseCookieOptions)
+          .cookie("refreshToken", refreshToken, baseCookieOptions)
+          .json({
+            success: true,
+            message: "Email already verified",
+          })
+        return
       }
 
       user.isVerified = true
@@ -405,17 +439,34 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<R
 
       await verificationRepository.deleteEmailVerificationsForUser(user.id)
 
-      return res.status(200).json({
-        success: true,
-        message: "Email verified successfully",
-      })
+      const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user.id)
+
+      if (successRedirectUrl) {
+        res
+          .cookie("accessToken", accessToken, baseCookieOptions)
+          .cookie("refreshToken", refreshToken, baseCookieOptions)
+          .redirect(successRedirectUrl)
+        return
+      }
+
+      res
+        .status(200)
+        .cookie("accessToken", accessToken, baseCookieOptions)
+        .cookie("refreshToken", refreshToken, baseCookieOptions)
+        .json({
+          success: true,
+          message: "Email verified successfully",
+        })
+      return
     } catch (error) {
       if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({ message: error.message })
+        res.status(error.statusCode).json({ message: error.message })
+        return
       }
 
       const message = error instanceof Error ? error.message : "Something went wrong"
-      return res.status(500).json({ message })
+      res.status(500).json({ message })
+      return
     }
    }
 

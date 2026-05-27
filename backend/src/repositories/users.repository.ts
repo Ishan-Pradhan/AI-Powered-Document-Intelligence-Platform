@@ -6,6 +6,10 @@ export const userRepository = {
     return await User.findAll();
   },
 
+  count: async () => {
+    return await User.count();
+  },
+
   
   findById: async (id: string) => {
     return await User.findByPk(id);
