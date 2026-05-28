@@ -20,5 +20,17 @@ export const login = (payload: LoginInput) =>
 export const register = (payload: RegisterInput) =>
   api.post<ApiResponse<AuthUserDto>>("/api/v1/auth/register", payload)
 
+export type ResendVerificationEmailResponse = {
+  success: boolean
+  message: string
+  verifyLink?: string
+}
+
+export const resendVerificationEmail = (email: string) =>
+  api.post<ResendVerificationEmailResponse>(
+    "/api/v1/auth/resend-verification-email",
+    { email }
+  )
+
 export const oauthUrl = (provider: "google" | "github") =>
   buildApiUrl(`/api/v1/auth/${provider}`)

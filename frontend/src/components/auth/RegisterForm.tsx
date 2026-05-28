@@ -1,10 +1,11 @@
 import { register } from "@/api/auth";
 import { registerSchema, type RegisterInput } from "@/schema/auth.schema";
+import { useAuthStore } from "@/store/auth.store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
@@ -14,6 +15,7 @@ import { Label } from "../ui/label";
 function RegisterForm() {
     const [submitError, setSubmitError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const setUser = useAuthStore((state) => state.setUser)
 
 
   const form = useForm<RegisterInput>({
@@ -31,16 +33,17 @@ function RegisterForm() {
       setSubmitError(null)
   
       try {
-        await register(values)
+        const response = await register(values)
+        setUser(response.data.data)
       } catch (error) {
         const err = error as AxiosError<{ message?: string }>
-        setSubmitError(err.response?.data?.message || "Unable to sign in.")
+        setSubmitError(err.response?.data?.message || "Unable to sign up.")
         return
       }
-  navigate("/verify-email")
+  navigate("/verify-email", { state: { email: values.email } })
     }
   return (
-   <Card className="w-full max-w-sm">
+   <Card className="w-full max-w-md">
       <CardHeader className="border-b">
         <CardTitle>Sign up</CardTitle>
         <CardDescription>Create an account to get started.</CardDescription>
@@ -62,6 +65,7 @@ function RegisterForm() {
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
+                className="py-4"
                 type="text"
                 autoComplete="name"
                 aria-invalid={Boolean(form.formState.errors.name)}
@@ -78,6 +82,7 @@ function RegisterForm() {
               <Input
                 id="email"
                 type="email"
+                className="py-4"
                 autoComplete="email"
                 aria-invalid={Boolean(form.formState.errors.email)}
                 {...form.register("email")}
@@ -94,6 +99,7 @@ function RegisterForm() {
               <Input
                 id="password"
                 type="password"
+                className="py-4"
                 autoComplete="current-password"
                 aria-invalid={Boolean(form.formState.errors.password)}
                 {...form.register("password")}
@@ -109,6 +115,7 @@ function RegisterForm() {
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
                 id="confirmPassword"
+                className="py-4"
                 type="password"
                 autoComplete="current-password"
                 aria-invalid={Boolean(form.formState.errors.confirmPassword)}
@@ -121,7 +128,7 @@ function RegisterForm() {
               ) : null}
             </div>
 
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full py-5 cursor-pointer bg-primary text-white hover:bg-primary/90 transition-colors duration-300 ease-in-out  " disabled={form.formState.isSubmitting}>
               Sign up
             </Button>
           </form>
@@ -131,6 +138,16 @@ function RegisterForm() {
               {submitError}
             </div>
           ) : null}
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-medium text-secondary  underline-offset-4 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </CardContent>
     </Card>

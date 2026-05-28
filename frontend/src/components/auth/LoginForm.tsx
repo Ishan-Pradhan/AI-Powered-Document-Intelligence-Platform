@@ -17,7 +17,7 @@ import {
 } from "../ui/card"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import SocialLogins from "./SocialLogins"
 
 function LoginForm() {
@@ -60,7 +60,7 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-md">
       <CardHeader className="border-b">
         <CardTitle>Sign in</CardTitle>
         <CardDescription>Use a provider or your email.</CardDescription>
@@ -110,7 +110,7 @@ function LoginForm() {
               ) : null}
             </div>
 
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full py-5 cursor-pointer bg-primary text-white hover:bg-primary/90 transition-colors duration-300 ease-in-out " disabled={form.formState.isSubmitting}>
               Sign in
             </Button>
           </form>
@@ -120,6 +120,16 @@ function LoginForm() {
               {submitError}
             </div>
           ) : null}
+
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link
+              to="/register"
+              className="font-medium text-secondary underline-offset-4 hover:underline"
+            >
+              Sign up
+            </Link>
+          </p>
         </div>
       </CardContent>
     </Card>
