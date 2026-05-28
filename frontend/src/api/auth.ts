@@ -12,6 +12,7 @@ export type AuthUserDto = {
   id: string
   email: string
   name: string
+  avatarUrl?: string | null
 }
 
 export const login = (payload: LoginInput) =>

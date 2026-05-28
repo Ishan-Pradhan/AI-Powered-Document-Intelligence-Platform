@@ -9,6 +9,7 @@ import { LoginUserTypes, RegisterUserTypes } from "../types/auth.types";
 import { baseCookieOptions } from "../config/cookie.config";
 import { verificationRepository } from "../repositories/verification.repository";
 import { sendVerificationEmail } from "../services/email.service";
+import { getGravatar } from "../utils/gravatar.utils";
 
 
 // Helper function to generate access and refresh tokens
@@ -144,13 +145,18 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         isVerified: Boolean(emailVerified),
+        avatarUrl: getGravatar(email),
         role,
       } as any)
     } else {
+      if (!user.avatarUrl) {
+        user.avatarUrl = getGravatar(user.email)
+      }
       if (emailVerified && !user.isVerified) {
         user.isVerified = true
-        await user.save()
       }
+
+      await user.save()
     }
 
     // If they verified via Google, cleanup any pending email-verification tokens.
@@ -202,6 +208,7 @@ export const registerUser = async(req:Request, res: Response) => {
       name,
       email,
       password: hashedPassword,
+      avatarUrl: getGravatar(email),
       role,
     })
 
@@ -229,6 +236,7 @@ export const registerUser = async(req:Request, res: Response) => {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
+        avatarUrl: newUser.avatarUrl,
         verificationEmailSent,
         ...(process.env.NODE_ENV === "development" && verifyLink ? { verifyLink } : {}),
       },
@@ -260,6 +268,11 @@ export const loginUser = async(req:Request, res: Response): Promise<Response> =>
       throw new ApiError(400, "Invalid email or password")
     }
 
+    if (!user.avatarUrl) {
+      user.avatarUrl = getGravatar(user.email)
+      await user.save()
+    }
+
       const isPasswordValid = await bcrypt.compare(password, user.password)
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials")
@@ -272,6 +285,7 @@ export const loginUser = async(req:Request, res: Response): Promise<Response> =>
         id: user.id,
         name: user.name,
         email: user.email,
+        avatarUrl: user.avatarUrl,
       },
       message: "User logged in successfully"
     })
@@ -332,12 +346,18 @@ export const logoutUser = async(req:Request, res: Response): Promise<Response> =
 if(!user) {
   throw new ApiError(404, "User not found");
 }
+
+if (!user.avatarUrl) {
+  user.avatarUrl = getGravatar(user.email)
+  await user.save()
+}
     return res.status(200).json({
       success: true,
       data: {
         id: user?.id,
         name: user?.name,
         email: user?.email,
+        avatarUrl: user?.avatarUrl,
         isVerified: user?.isVerified,
         role: user?.role,
       },

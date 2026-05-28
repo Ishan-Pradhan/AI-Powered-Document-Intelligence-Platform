@@ -25,6 +25,11 @@ export const User = sequelize.define<UserInstance>(
             type: DataTypes.STRING,
             allowNull: false,
         },
+        avatarUrl: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            defaultValue: null,
+        },
         role: {
             type: DataTypes.ENUM('user', 'admin'),
             defaultValue: 'user',

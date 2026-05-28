@@ -5,6 +5,7 @@ export interface Users{
         email: string;
         password: string;
         name: string;
+    avatarUrl: string | null;
         role: 'user' | 'admin';
         isVerified: boolean;
         isBlocked: boolean;
@@ -16,6 +17,7 @@ export interface Users{
 export type UserCreationAttributes = Optional<
     Users,
     | 'id'
+    | 'avatarUrl'
     | 'role'
     | 'isVerified'
     | 'isBlocked'
