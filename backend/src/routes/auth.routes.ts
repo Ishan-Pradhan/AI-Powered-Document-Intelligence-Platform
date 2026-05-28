@@ -2,6 +2,8 @@ import { Router } from "express";
 import { getCurrentUser, googleAuthCallback, googleAuthRedirect, loginUser, logoutUser, refreshAccessToken, registerUser, resendVerificationEmail, verifyEmail } from "../controllers/users.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { loginSchema, registerSchema, resendVerificationEmailSchema, verifyEmailSchema } from "../validations/auth.validation";
+import { forgotPassword, resetPassword, changePassword } from "../controllers/users.controller";
+import { forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from "../validations/auth.validation";
 import { verifyJWT } from "../middlewares/auth.middleware";
 
 const router = Router();
@@ -13,6 +15,9 @@ router.route('/current-user').get(verifyJWT, getCurrentUser);
 router.route('/refresh-access-token').post( refreshAccessToken);
 router.route('/verify-email').get(validate(verifyEmailSchema), verifyEmail);
 router.route('/resend-verification-email').post(validate(resendVerificationEmailSchema), resendVerificationEmail);
+router.route('/forgot-password').post(validate(forgotPasswordSchema), forgotPassword);
+router.route('/reset-password').post(validate(resetPasswordSchema), resetPassword);
+router.route('/change-password').post(verifyJWT, validate(changePasswordSchema), changePassword);
 router.route('/google').get(googleAuthRedirect);
 router.route('/google/callback').get(googleAuthCallback);
 

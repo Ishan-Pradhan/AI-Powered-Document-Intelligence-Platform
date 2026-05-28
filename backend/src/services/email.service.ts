@@ -36,3 +36,20 @@ export const sendVerificationEmail = async (to: string, token: string) => {
 
   return { verifyLink };
 };
+
+export const sendPasswordResetEmail = async (to: string, token: string) => {
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const resetLink = `${frontendUrl.replace(/\/$/, "")}/reset-password?token=${token}`;
+
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+  const transporter = getTransporter();
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: "Reset your password",
+    text: `Reset your password using this link: ${resetLink}`,
+  });
+
+  return { resetLink };
+};

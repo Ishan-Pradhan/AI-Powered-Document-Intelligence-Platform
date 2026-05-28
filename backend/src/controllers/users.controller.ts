@@ -1,6 +1,7 @@
 import { userRepository } from "../repositories/users.repository"
 import { ApiError } from "../utils/ApiError"
 import type { Request, Response } from "express"
+import type { AuthRequest } from "../types/auth.types"
 import jwt, { type SignOptions } from "jsonwebtoken"
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -8,7 +9,7 @@ import { OAuth2Client } from "google-auth-library";
 import { LoginUserTypes, RegisterUserTypes } from "../types/auth.types";
 import { baseCookieOptions } from "../config/cookie.config";
 import { verificationRepository } from "../repositories/verification.repository";
-import { sendVerificationEmail } from "../services/email.service";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../services/email.service";
 import { getGravatar } from "../utils/gravatar.utils";
 
 
@@ -335,7 +336,6 @@ export const logoutUser = async(req:Request, res: Response): Promise<Response> =
   export const getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
     try {
       const accessToken = req.cookies.accessToken;
-      console.log("access token is ", accessToken)
       if (!accessToken) {
         throw new ApiError(401, "Unauthorized: No access token provided");
       }
@@ -538,3 +538,126 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<R
       return res.status(500).json({ message })
     }
   }
+
+  //change password (for logged in users)
+  export const changePassword = async (req: AuthRequest, res: Response): Promise<Response> => {
+    try {
+      const userId = req.user?.id
+      const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string }
+
+      if (!userId) {
+        throw new ApiError(401, 'Unauthorized')
+      }
+
+      if (!currentPassword || !newPassword) {
+        throw new ApiError(400, 'Current password and new password are required')
+      }
+
+      const user = await userRepository.findById(userId)
+      if (!user) {
+        throw new ApiError(404, 'User not found')
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password)
+      if (!isMatch) {
+        throw new ApiError(400, 'Current password is incorrect')
+      }
+
+      user.password = await bcrypt.hash(newPassword, 10)
+      await user.save()
+
+      return res.status(200).json({
+        success: true,
+        message: 'Password changed successfully',
+      })
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ message: error.message })
+      }
+      const message = error instanceof Error ? error.message : 'Something went wrong'
+      return res.status(500).json({ message })
+    }
+  }
+
+    // Controller function to handle forgot password (sends reset link)
+    export const forgotPassword = async (req: Request, res: Response): Promise<Response> => {
+      try {
+        const validatedBody = req.validated?.body as { email?: unknown } | undefined
+        const email = (validatedBody?.email ?? (req.body as any)?.email) as unknown
+      if (!email || typeof email !== "string") {
+        throw new ApiError(400, "Email is required")}
+      const user = await userRepository.findByEmail(email)
+      if (!user) {
+        return res.status(200).json({
+          success: true,
+          message: "If an account exists for this email, a password reset link has been sent.",
+        })}
+          const resetToken = crypto.randomBytes(32).toString("hex")
+          const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+          await verificationRepository.deletePasswordResetTokensForUser(user.id)
+          await verificationRepository.createPasswordResetToken(user.id, resetToken, expiresAt)
+
+          try {
+            await sendPasswordResetEmail(user.email, resetToken)
+          } catch (emailErr) {
+            console.error('Failed to send password reset email', emailErr)
+          }
+
+          return res.status(200).json({
+            success: true,
+            message: "If an account exists for this email, a password reset link has been sent.",
+          })
+     
+      }catch(error) {
+        if (error instanceof ApiError) {
+          return res.status(error.statusCode).json({ message: error.message })
+        } 
+        const message = error instanceof Error ? error.message : "Something went wrong"
+        return res.status(500).json({ message })
+      }}
+
+
+    // Controller to reset password using token (public)
+    export const resetPassword = async (req: Request, res: Response): Promise<Response> => {
+      try {
+        const validatedBody = req.validated?.body as { token?: unknown; newPassword?: unknown } | undefined
+        const token = (validatedBody?.token ?? (req.body as any)?.token) as unknown
+        const newPassword = (validatedBody?.newPassword ?? (req.body as any)?.newPassword) as unknown
+
+        if (!token || typeof token !== 'string') {
+          throw new ApiError(400, 'Reset token is required')
+        }
+        if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+          throw new ApiError(400, 'New password must be at least 6 characters')
+        }
+
+        const verification = await verificationRepository.findPasswordResetByToken(token)
+        if (!verification) {
+          throw new ApiError(400, 'Invalid or expired reset token')
+        }
+
+        if (new Date(verification.expiresAt).getTime() < Date.now()) {
+          await verificationRepository.deleteById(verification.id)
+          throw new ApiError(400, 'Reset token has expired')
+        }
+
+        const user = await userRepository.findById(verification.userId)
+        if (!user) {
+          await verificationRepository.deleteById(verification.id)
+          throw new ApiError(404, 'User not found')
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10)
+        await user.save()
+
+        await verificationRepository.deletePasswordResetTokensForUser(user.id)
+
+        return res.status(200).json({ success: true, message: 'Password has been reset' })
+      } catch (error) {
+        if (error instanceof ApiError) {
+          return res.status(error.statusCode).json({ message: error.message })
+        }
+        const message = error instanceof Error ? error.message : 'Something went wrong'
+        return res.status(500).json({ message })
+      }
+    }
