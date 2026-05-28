@@ -25,7 +25,7 @@ function SocialLogins<TFieldValues extends FieldValues>({
       <Button
         type="button"
         variant="outline"
-        className="w-full justify-start py-6 flex gap-2 cursor-pointer"
+        className="w-full justify-start py-6 flex gap-2 cursor-pointer text-charcoal-900 "
         disabled={form.formState.isSubmitting}
         onClick={() => startOAuth("google")}
       >
@@ -36,7 +36,7 @@ function SocialLogins<TFieldValues extends FieldValues>({
       <Button
         type="button"
         variant="outline"
-        className="w-full justify-start py-6 cursor-pointer"
+        className="w-full justify-start py-6 cursor-pointer text-charcoal-900 "
         disabled={form.formState.isSubmitting}
         onClick={() => startOAuth("github")}
       >

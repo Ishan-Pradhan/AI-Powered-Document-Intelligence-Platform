@@ -25,3 +25,16 @@ export const registerSchema = z.object({
   message: "Passwords do not match",})
 
 export type RegisterInput = z.infer<typeof registerSchema>
+
+export const forgotPasswordSchema = z.object({
+  email: z.email("Invalid email"),
+})
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+})
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>

@@ -5,6 +5,8 @@ import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import RegisterPage from "@/pages/Auth/RegisterPage";
 import EmailVerificationPage from "@/pages/Auth/EmailVerificationPage";
 import VerificationSuccessPage from "@/pages/Auth/VerificationSuccessPage";
+import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
 import RequireAuth from "./privateRoutes/isLoggedIn";
 
 
@@ -27,6 +29,14 @@ export const router = createBrowserRouter([
       {
         path: "/verify-success",
         element: <VerificationSuccessPage />,
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPasswordPage />,
+      },
+      {
+        path: "/reset-password",
+        element: <ResetPasswordPage />,
       },
     ],
   },

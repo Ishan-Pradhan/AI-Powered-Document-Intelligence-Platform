@@ -33,5 +33,13 @@ export const resendVerificationEmail = (email: string) =>
     { email }
   )
 
+export const forgotPassword = (email: string) =>
+  api.post<{ success: boolean; message: string }>("/api/v1/auth/forgot-password", {
+    email,
+  })
+
+export const resetPassword = (payload: { token: string; newPassword: string }) =>
+  api.post<{ success: boolean; message: string }>("/api/v1/auth/reset-password", payload)
+
 export const oauthUrl = (provider: "google" | "github") =>
   buildApiUrl(`/api/v1/auth/${provider}`)

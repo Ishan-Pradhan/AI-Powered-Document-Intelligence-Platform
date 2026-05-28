@@ -110,6 +110,15 @@ function LoginForm() {
               ) : null}
             </div>
 
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-medium text-secondary underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button type="submit" className="w-full py-5 cursor-pointer bg-primary text-white hover:bg-primary/90 transition-colors duration-300 ease-in-out " disabled={form.formState.isSubmitting}>
               Sign in
             </Button>

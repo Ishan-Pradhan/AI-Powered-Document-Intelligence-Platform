@@ -3,7 +3,10 @@ import { Cpu, FileMinusCorner, Paperclip, StarsIcon } from 'lucide-react';
 
 function AuthSideDesign() {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-15 bg-linear-to-br from-purple-200 via-indigo-200 to-sky-200 p-10">
+    <div
+      className="flex h-full w-full flex-col items-center justify-center gap-15 p-10 bg-linear-to-br from-primary-200 via-secondary-200 to-royal-gold-200 rounded-lg"
+      
+    >
         {/*  uploaded and processsed document */}
       <div className="border border-border bg-background p-4 text-primary rounded-lg w-full max-w-md -rotate-5 hover:rotate-0 transition-transform duration-300">
         <div className="flex justify-between items-center mb-4">
@@ -38,7 +41,7 @@ function AuthSideDesign() {
        
          <p className=" italic inline">"...revenue increased by 14% year-over-year in the APAC region, driven primarily by enterprise software subscriptions..."</p>
         </div>
-        <div className="absolute -left-4 top-1/2 -translate-y-1/2 rounded-full bg-cyan-100 p-2">
+        <div className="absolute -left-4 top-1/2 -translate-y-1/2 rounded-full bg-secondary-100 p-2">
             <Paperclip size={14} className="text-secondary" />
         </div>
       </div>

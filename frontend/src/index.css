@@ -12,6 +12,72 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
 
+     /* Design tokens: charcoal-brown */
+    --color-dark-shade-50: #f1f5f0;
+    --color-dark-shade-100: #e4eae1;
+    --color-dark-shade-200: #c9d5c3;
+    --color-dark-shade-300: #aec0a5;
+    --color-dark-shade-400: #93ab87;
+    --color-dark-shade-500: #789669;
+    --color-dark-shade-600: #607854;
+    --color-dark-shade-700: #485a3f;
+    --color-dark-shade-800: #303c2a;
+    --color-dark-shade-900: #181e15;
+    --color-dark-shade-950: #11150f;
+
+    /* blue-slate (primary) */
+    --color-primary-50: #eaf7fb;
+    --color-primary-100: #d4eef7;
+    --color-primary-200: #aaddee;
+    --color-primary-300: #7fcce6;
+    --color-primary-400: #55bbdd;
+    --color-primary-500: #2aaad5;
+    --color-primary-600: #2288aa;
+    --color-primary-700: #196680;
+    --color-primary-800: #114455;
+    --color-primary-900: #08222b;
+    --color-primary-950: #06181e;
+
+    /* tropical-teal */
+    --color-tropical-teal-50: #eafafa;
+    --color-tropical-teal-100: #d5f6f6;
+    --color-tropical-teal-200: #acecec;
+    --color-tropical-teal-300: #82e3e3;
+    --color-tropical-teal-400: #59d9d9;
+    --color-tropical-teal-500: #2fd0d0;
+    --color-tropical-teal-600: #26a6a6;
+    --color-tropical-teal-700: #1c7d7d;
+    --color-tropical-teal-800: #135353;
+    --color-tropical-teal-900: #092a2a;
+    --color-tropical-teal-950: #071d1d;
+
+    /* royal-gold */
+    --color-royal-gold-50: #fdf9e7;
+    --color-royal-gold-100: #fcf2cf;
+    --color-royal-gold-200: #f8e5a0;
+    --color-royal-gold-300: #f5d870;
+    --color-royal-gold-400: #f2cb40;
+    --color-royal-gold-500: #eebe11;
+    --color-royal-gold-600: #bf980d;
+    --color-royal-gold-700: #8f720a;
+    --color-royal-gold-800: #5f4c07;
+    --color-royal-gold-900: #302603;
+    --color-royal-gold-950: #211b02;
+
+    /* sandy-brown (secondary) */
+    --color-secondary-50: #fdf2e8;
+    --color-secondary-100: #fbe4d0;
+    --color-secondary-200: #f6c9a2;
+    --color-secondary-300: #f2ae73;
+    --color-secondary-400: #ee9344;
+    --color-secondary-500: #e97816;
+    --color-secondary-600: #bb6011;
+    --color-secondary-700: #8c480d;
+    --color-secondary-800: #5d3009;
+    --color-secondary-900: #2f1804;
+    --color-secondary-950: #211103;
+
+
   --color-error: var(--destructive);
   --color-error-foreground: var(--primary-foreground);
     --color-sidebar-ring: var(--sidebar-ring);
@@ -55,16 +121,17 @@
 }
 
 :root {
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: #8B5CF6;
-    --primary-foreground: #05070A;
-    --secondary: #06B6D4;
-    --secondary-foreground: oklch(0.205 0 0);
+    --primary: var(--color-primary-500); /* blue-slate-500 */
+    --primary-foreground: #ffffff;
+    --secondary: var(--color-secondary-500); /* sandy-brown-500 */
+    --secondary-foreground: #ffffff;
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
     --accent: oklch(0.97 0 0);
@@ -87,8 +154,8 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
-
-    --accent-gradient: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    --primary-accent: var(--color-blue-slate-700);
+    --accent-gradient: linear-gradient(135deg, var(--color-blue-slate-500), var(--color-sandy-brown-500));
 }
 
 .dark {
@@ -98,10 +165,10 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: #8B5CF6;
-    --primary-foreground: #05070A;
-    --secondary: #06B6D4;
-    --secondary-foreground: #05070A;
+    --primary: var(--color-blue-slate-500);
+    --primary-foreground: #ffffff;
+    --secondary: var(--color-sandy-brown-500);
+    --secondary-foreground: #ffffff;
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
@@ -124,7 +191,8 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
 
-    --accent-gradient: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    --accent-gradient: linear-gradient(135deg, var(--color-blue-slate-500), var(--color-sandy-brown-500));
+    --primary-accent: var(--color-blue-slate-700);
 }
 
 @layer base {
