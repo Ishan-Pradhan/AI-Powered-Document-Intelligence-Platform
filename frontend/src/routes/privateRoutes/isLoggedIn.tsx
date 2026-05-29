@@ -16,45 +16,46 @@ type CurrentUserResponse = {
 	message: string
 }
 
-function RequireAuth() {
+function IsLoggedIn() {
 	const location = useLocation()
-	const user = useAuthStore((state) => state.user)
 	const setUser = useAuthStore((state) => state.setUser)
 	const clearUser = useAuthStore((state) => state.clearUser)
 
-	const [isChecking, setIsChecking] = useState(() => !user)
+	// Always start as checking — never trust local state alone
+	const [isChecking, setIsChecking] = useState(true)
+	const [isAuthenticated, setIsAuthenticated] = useState(false)
 
 	useEffect(() => {
-		if (user || !isChecking) {
-			return
-		}
-
 		let cancelled = false
 
-		const fetchCurrentUserIfNeeded = async () => {
+		const verifySession = async () => {
 			try {
 				const response = await api.get<CurrentUserResponse>(
 					"/api/v1/auth/current-user"
 				)
 				if (cancelled) return
 				setUser(response.data.data)
+				setIsAuthenticated(true)
 			} catch {
 				if (cancelled) return
 				clearUser()
+				setIsAuthenticated(false)
 			} finally {
 				if (!cancelled) setIsChecking(false)
 			}
 		}
 
-		void fetchCurrentUserIfNeeded()
+		void verifySession()
 
 		return () => {
 			cancelled = true
 		}
-	}, [user, isChecking, setUser, clearUser])
+	}, [setUser, clearUser])
 
-	if (user) return <Outlet />
+	// Always wait for the backend to confirm the session
 	if (isChecking) return null
+
+	if (isAuthenticated) return <Outlet />
 
 	return (
 		<Navigate
@@ -65,4 +66,4 @@ function RequireAuth() {
 	)
 }
 
-export default RequireAuth
+export default IsLoggedIn

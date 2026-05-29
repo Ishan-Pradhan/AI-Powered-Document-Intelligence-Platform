@@ -7,7 +7,7 @@ import EmailVerificationPage from "@/pages/Auth/EmailVerificationPage";
 import VerificationSuccessPage from "@/pages/Auth/VerificationSuccessPage";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
-import RequireAuth from "./privateRoutes/isLoggedIn";
+import IsLoggedIn from "./privateRoutes/isLoggedIn";
 
 
 export const router = createBrowserRouter([
@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    element: <RequireAuth />,
+    element: <IsLoggedIn />,
     children: [
       {
         path: "/",
