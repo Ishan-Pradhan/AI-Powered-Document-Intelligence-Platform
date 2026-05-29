@@ -11,9 +11,7 @@ import { Button } from "../ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+
 } from "../ui/card"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
@@ -60,13 +58,17 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="border-b">
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Use a provider or your email.</CardDescription>
-      </CardHeader>
+    <div className="flex w-full flex-col items-center justify-center gap-8">
+     
+    <Card className="w-full max-w-md ring-0 ">
+      <div className="flex flex-col items-center gap-2">
+        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your email and password to sign in.
+        </p>
+      </div>
 
-      <CardContent className="pt-4">
+      <CardContent className="pt-4 ">
         <div className="grid gap-3">
           <SocialLogins
            form={form} setSubmitError={setSubmitError} />
@@ -142,6 +144,7 @@ function LoginForm() {
         </div>
       </CardContent>
     </Card>
+    </div>
   )
 }
 

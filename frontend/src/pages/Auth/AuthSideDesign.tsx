@@ -4,7 +4,7 @@ import { Cpu, FileMinusCorner, Paperclip, StarsIcon } from 'lucide-react';
 function AuthSideDesign() {
   return (
     <div
-      className="flex h-full w-full flex-col items-center justify-center gap-15 p-10 bg-linear-to-br from-primary-200 via-secondary-200 to-royal-gold-200 rounded-lg"
+      className="flex h-full w-full flex-col items-center justify-center gap-15 p-10 bg-linear-to-br from-primary-100 to-secondary-100"
       
     >
         {/*  uploaded and processsed document */}

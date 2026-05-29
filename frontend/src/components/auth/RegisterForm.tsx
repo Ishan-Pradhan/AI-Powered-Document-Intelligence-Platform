@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent, } from "../ui/card";
 import SocialLogins from "./SocialLogins";
 import { Label } from "../ui/label";
 
@@ -43,13 +43,17 @@ function RegisterForm() {
   navigate("/verify-email", { state: { email: values.email } })
     }
   return (
-   <Card className="w-full max-w-md">
-      <CardHeader className="border-b">
-        <CardTitle>Sign up</CardTitle>
-        <CardDescription>Create an account to get started.</CardDescription>
-      </CardHeader>
+      <div className="flex w-full flex-col items-center justify-center gap-8">
+     
+   <Card className="w-full max-w-md ring-0">
+       <div className="flex flex-col items-center gap-2">
+        <h1 className="text-2xl font-bold">Create an account</h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your details to get started.
+        </p>
+      </div>
 
-      <CardContent className="pt-4">
+      <CardContent className="pt-4" >
         <div className="grid gap-3">
           <SocialLogins
            form={form} setSubmitError={setSubmitError} />
@@ -151,6 +155,7 @@ function RegisterForm() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 
