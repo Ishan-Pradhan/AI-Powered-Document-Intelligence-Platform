@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import {  sequelize } from './config/db';
+import { sequelize } from './config/db';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -12,21 +12,23 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({origin: process.env.FRONTEND_URL, credentials: true}));
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 console.log("CORS configured for:", process.env.FRONTEND_URL)
 
 
 //routes
 import authRoutes from './routes/auth.routes';
+import adminRoutes from './routes/admin.routes';
 
-app.use("/api/v1/auth", authRoutes)
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 
-    app.get("/",(_req:Request, res: Response) =>{
-        res.status(200).send("<h1>Hello World</h1>")
-    })
+app.get("/", (_req: Request, res: Response) => {
+  res.status(200).send("<h1>Hello World</h1>")
+})
 
-    export const connectDB = async () => {
+export const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log("Database connected successfully");
@@ -35,8 +37,8 @@ app.use("/api/v1/auth", authRoutes)
     process.exit(1);
   }
 };
-     connectDB();
-    
-    app.listen(process.env.PORT, () =>{
-        console.log(`app is listening at ${process.env.PORT}`)
-    })
+connectDB();
+
+app.listen(process.env.PORT, () => {
+  console.log(`app is listening at ${process.env.PORT}`)
+})
