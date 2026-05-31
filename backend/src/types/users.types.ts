@@ -9,6 +9,7 @@ export interface Users{
         role: 'user' | 'admin';
         isVerified: boolean;
         isBlocked: boolean;
+        authProvider: 'local' | 'google' | 'github';
         refreshToken: string | null;
         createdAt?: Date;
         updatedAt?: Date;
@@ -21,6 +22,7 @@ export type UserCreationAttributes = Optional<
     | 'role'
     | 'isVerified'
     | 'isBlocked'
+    | 'authProvider'
     | 'refreshToken'
     | 'createdAt'
     | 'updatedAt'

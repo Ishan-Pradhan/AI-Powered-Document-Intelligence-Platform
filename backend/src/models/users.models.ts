@@ -42,6 +42,10 @@ export const User = sequelize.define<UserInstance>(
             type: DataTypes.BOOLEAN,
             defaultValue: false,
         },
+        authProvider: {
+            type: DataTypes.ENUM('local', 'google', 'github'),
+            defaultValue: 'local',
+        },
         refreshToken: {
             type: DataTypes.STRING,
             allowNull: true,
