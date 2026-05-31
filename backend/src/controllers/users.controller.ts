@@ -2,68 +2,18 @@ import { userRepository } from "../repositories/users.repository"
 import { ApiError } from "../utils/ApiError"
 import type { Request, Response } from "express"
 import type { AuthRequest } from "../types/auth.types"
-import jwt, { type SignOptions } from "jsonwebtoken"
-import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken"
 import crypto from "crypto";
-import { OAuth2Client } from "google-auth-library";
 import { LoginUserTypes, RegisterUserTypes } from "../types/auth.types";
 import { baseCookieOptions } from "../config/cookie.config";
 import { verificationRepository } from "../repositories/verification.repository";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../services/email.service";
 import { getGravatar } from "../utils/gravatar.utils";
+import { generateAccessAndRefereshTokens } from "../utils/token.utils"
+import { comparePassword, generateToken, hashPassword } from "../utils/security.utils"
+import { getGoogleOAuthClient } from "../utils/googleOAuth.utils"
+import { auth } from "google-auth-library"
 
-
-// Helper function to generate access and refresh tokens
-export const generateAccessAndRefereshTokens = async (userId: string) => {
-  try {
-    const user = await userRepository.findById(userId)
-    if (!user) throw new ApiError(404, "User not found")
-
-    const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
-    if (!accessTokenSecret) throw new ApiError(500, "ACCESS_TOKEN_SECRET is not set")
-
-    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET
-    if (!refreshTokenSecret) throw new ApiError(500, "REFRESH_TOKEN_SECRET is not set")
-
-    const accessTokenExpiresIn = (process.env.ACCESS_TOKEN_EXPIRES_IN || "15m") as SignOptions["expiresIn"]
-    const refreshTokenExpiresIn = (process.env.REFRESH_TOKEN_EXPIRES_IN || "7d") as SignOptions["expiresIn"]
-
-    const accessToken = jwt.sign(
-      { id: user.id, email: user.email },
-      accessTokenSecret,
-      { expiresIn: accessTokenExpiresIn }
-    )
-
-    const refreshToken = jwt.sign(
-      { id: user.id },
-      refreshTokenSecret,
-      { expiresIn: refreshTokenExpiresIn }
-    )
-
-    user.refreshToken = refreshToken
-    await user.save()
-
-    return { accessToken, refreshToken }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Something went wrong while generating tokens"
-    throw new ApiError(500, message)
-  }
-}
-
-const getGoogleOAuthClient = () => {
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-  const redirectUri = process.env.GOOGLE_CALLBACK_URL
-
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new ApiError(
-      500,
-      "Missing Google OAuth env vars (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL)"
-    )
-  }
-
-  return new OAuth2Client(clientId, clientSecret, redirectUri)
-}
 
 export const googleAuthRedirect = async (_req: Request, res: Response) => {
   const clientId = process.env.GOOGLE_CLIENT_ID
@@ -138,14 +88,15 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
       const role = userCount === 0 ? "admin" : "user"
 
       // Keep it simple: we store a random password so schema stays unchanged.
-      const randomPassword = crypto.randomBytes(32).toString("hex")
-      const hashedPassword = await bcrypt.hash(randomPassword, 10)
+      const randomPassword = generateToken()
+      const hashedPassword = await hashPassword(randomPassword)
 
       user = await userRepository.create({
         name,
         email,
         password: hashedPassword,
         isVerified: Boolean(emailVerified),
+        authProvider: "google",
         avatarUrl: getGravatar(email),
         role,
       } as any)
@@ -206,7 +157,7 @@ export const registerUser = async (req: Request, res: Response) => {
       throw new ApiError(400, "Email already exists")
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await hashPassword(password)
 
     const userCount = await userRepository.count()
     const role = userCount === 0 ? "admin" : "user"
@@ -220,7 +171,7 @@ export const registerUser = async (req: Request, res: Response) => {
     })
 
     // create verification token (valid for 24h) and email it
-    const verificationToken = crypto.randomBytes(32).toString("hex")
+    const verificationToken = generateToken()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     await verificationRepository.deleteEmailVerificationsForUser(newUser.id)
     await verificationRepository.createEmailVerification(newUser.id, verificationToken, expiresAt)
@@ -280,7 +231,11 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
       await user.save()
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (user.authProvider === "google") {
+  throw new ApiError(400, "You previously signed up with Google. Please use Google login.")
+}
+
+    const isPasswordValid = await comparePassword(password, user.password)
     if (!isPasswordValid) {
       throw new ApiError(401, "Invalid user credentials")
     }
@@ -529,7 +484,7 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
       })
     }
 
-    const verificationToken = crypto.randomBytes(32).toString("hex")
+    const verificationToken = generateToken()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     await verificationRepository.deleteEmailVerificationsForUser(user.id)
@@ -577,12 +532,12 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<R
       throw new ApiError(404, 'User not found')
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password)
+    const isMatch = await comparePassword(currentPassword, user.password)
     if (!isMatch) {
       throw new ApiError(400, 'Current password is incorrect')
     }
 
-    user.password = await bcrypt.hash(newPassword, 10)
+    user.password = await hashPassword(newPassword)
     await user.save()
 
     return res.status(200).json({
@@ -613,7 +568,16 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
         message: "If an account exists for this email, a password reset link has been sent.",
       })
     }
-    const resetToken = crypto.randomBytes(32).toString("hex")
+
+    if (user.authProvider === "google") {
+  return res.status(200).json({
+    success: true,
+    message: "If an account exists for this email, a password reset link has been sent.",
+  })
+}
+
+
+    const resetToken = generateToken()
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
     await verificationRepository.deletePasswordResetTokensForUser(user.id)
     await verificationRepository.createPasswordResetToken(user.id, resetToken, expiresAt)
@@ -669,7 +633,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<Respon
       throw new ApiError(404, 'User not found')
     }
 
-    user.password = await bcrypt.hash(newPassword, 10)
+    user.password = await hashPassword(newPassword)
     await user.save()
 
     await verificationRepository.deletePasswordResetTokensForUser(user.id)
