@@ -1,4 +1,4 @@
-import { Verification } from "../models/verification.models";
+import { Verification } from "../models/verification.model";
 
 export const verificationRepository = {
   createEmailVerification: async (userId: string, token: string, expiresAt: Date) => {

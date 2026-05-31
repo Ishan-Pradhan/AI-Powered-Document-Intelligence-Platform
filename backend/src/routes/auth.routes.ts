@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { getCurrentUser, googleAuthCallback, googleAuthRedirect, loginUser, logoutUser, refreshAccessToken, registerUser, resendVerificationEmail, verifyEmail } from "../controllers/users.controller";
+import { getCurrentUser } from "../controllers/users.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { loginSchema, registerSchema, resendVerificationEmailSchema, verifyEmailSchema } from "../validations/auth.validation";
-import { forgotPassword, resetPassword, changePassword } from "../controllers/users.controller";
 import { forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from "../validations/auth.validation";
 import { verifyJWT } from "../middlewares/auth.middleware";
+import { registerUser, loginUser, logoutUser, refreshAccessToken, forgotPassword, resetPassword, changePassword } from "../controllers/auth.controller";
+import { googleAuthCallback, googleAuthRedirect } from "../controllers/oauth.controller";
+import { resendVerificationEmail, verifyEmail } from "../controllers/verifications.controller";
 
 const router = Router();
 
