@@ -1,10 +1,10 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/auth.types';
-import { parseDocumentBuffer } from '../utils/documentParser.utils';
-import { splitTextIntoChunks } from '../utils/chunker.utils';
+import { parseDocumentBuffer } from '../utils/rag/documentParser.utils';
 import { documentsRepository } from '../repositories/documents.repository';
 import { chunksRepository } from '../repositories/chunks.repository';
 import { embedChunkTexts } from '../services/embedding.service';
+import { splitTextIntoChunks } from '../utils/rag/chunker.utils';
 
 export const uploadDocument = async (req: AuthRequest, res: Response): Promise<Response> => {
     try {

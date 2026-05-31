@@ -1,4 +1,4 @@
-import { CHUNK_SIZE, OVERLAP, ROWS_PER_CHUNK } from "../constants";
+import { CHUNK_SIZE, OVERLAP, ROWS_PER_CHUNK } from "../../constants";
 
 // Splitting text into arrays of strings ready to be stored in the database.
 export const splitTextIntoChunks = (text: string, isTabular = false): string[] => {
