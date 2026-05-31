@@ -1,13 +1,10 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
-     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/components/ui/*": ["src/components/ui/*"],
-      "@/lib/*": ["src/lib/*"],
-      "@/hooks/*": ["src/hooks/*"]
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@hooks/*": ["./src/hooks/*"]
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "es2023",

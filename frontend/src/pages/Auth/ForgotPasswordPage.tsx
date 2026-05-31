@@ -1,17 +1,9 @@
 import type { AxiosError } from "axios"
+import { KeyRound } from "lucide-react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
 import { forgotPassword } from "@/api/auth"
-
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -49,55 +41,68 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="border-b">
-        <CardTitle>Forgot password</CardTitle>
-        <CardDescription>
-          Enter your email and we&apos;ll send a reset link.
-        </CardDescription>
-      </CardHeader>
+    <div className="w-full max-w-sm">
+      {/* icon */}
+      <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-secondary-500/10">
+        <KeyRound className="size-5 text-secondary-500" strokeWidth={1.75} />
+      </div>
 
-      <CardContent className="pt-4">
-        <form onSubmit={handleSubmit} className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="forgotEmail">Email</Label>
-            <Input
-              id="forgotEmail"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-            />
+      {/* heading */}
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-foreground">
+        Forgot your password?
+      </h1>
+      <p className="mb-8 text-sm text-muted-foreground">
+        No worries. Enter your email and we&apos;ll send you a reset link.
+      </p>
+
+      {/* form */}
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-1.5">
+          <Label htmlFor="forgotEmail" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Email address
+          </Label>
+          <Input
+            id="forgotEmail"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            className="h-10 bg-muted/40"
+          />
+        </div>
+
+        <button
+          id="forgot-password-submit"
+          type="submit"
+          disabled={isSubmitting}
+          className="flex h-10 w-full items-center justify-center rounded-md bg-primary-500 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? "Sending…" : "Send reset link"}
+        </button>
+
+        {error ? (
+          <div className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2.5 text-sm text-destructive">
+            {error}
           </div>
+        ) : null}
 
-          <Button type="submit" className="w-full py-5 hover:text-dark-shade-900" disabled={isSubmitting}>
-            {isSubmitting ? "Sending..." : "Send reset link"}
-          </Button>
+        {message ? (
+          <div className="rounded-lg border border-primary-500/25 bg-primary-500/8 px-3 py-2.5 text-sm text-primary-600">
+            {message}
+          </div>
+        ) : null}
 
-          {error ? (
-            <div className="rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
-              {error}
-            </div>
-          ) : null}
-
-          {message ? (
-            <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-              {message}
-            </div>
-          ) : null}
-
-          <p className="text-center text-sm text-muted-foreground">
-            Remembered it?{" "}
-            <Link
-              to="/login"
-              className="font-medium text-secondary underline-offset-4 hover:underline"
-            >
-              Back to sign in
-            </Link>
-          </p>
-        </form>
-      </CardContent>
-    </Card>
+        <p className="text-center text-sm text-muted-foreground">
+          Remembered it?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-secondary-500 underline-offset-4 hover:underline"
+          >
+            Back to sign in
+          </Link>
+        </p>
+      </form>
+    </div>
   )
 }

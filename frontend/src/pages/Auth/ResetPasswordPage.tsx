@@ -1,17 +1,9 @@
 import type { AxiosError } from "axios"
+import { Eye, EyeOff, LockKeyhole } from "lucide-react"
 import { useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 
 import { resetPassword } from "@/api/auth"
-
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -21,6 +13,7 @@ export default function ResetPasswordPage() {
   const token = searchParams.get("token") || ""
 
   const [newPassword, setNewPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -57,54 +50,101 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="border-b">
-        <CardTitle>Reset password</CardTitle>
-        <CardDescription>
-          Choose a new password for your account.
-        </CardDescription>
-      </CardHeader>
+    <div className="w-full max-w-sm">
+      {/* icon */}
+      <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-primary-500/10">
+        <LockKeyhole className="size-5 text-primary-500" strokeWidth={1.75} />
+      </div>
 
-      <CardContent className="pt-4">
-        <form onSubmit={handleSubmit} className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="newPassword">New password</Label>
+      {/* heading */}
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-foreground">
+        Set a new password
+      </h1>
+      <p className="mb-8 text-sm text-muted-foreground">
+        Choose something strong. You won&apos;t be asked for it again right away.
+      </p>
+
+      {/* form */}
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-1.5">
+          <Label htmlFor="newPassword" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            New password
+          </Label>
+          {/* password field with toggle */}
+          <div className="relative">
             <Input
               id="newPassword"
-              type="password"
+              type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="Enter a new password"
+              placeholder="At least 6 characters"
+              className="h-10 bg-muted/40 pr-10"
             />
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {showPassword
+                ? <EyeOff className="size-4" strokeWidth={1.75} />
+                : <Eye className="size-4" strokeWidth={1.75} />}
+            </button>
           </div>
 
-          <Button type="submit" className="w-full py-5 hover:text-dark-shade-900" disabled={isSubmitting}>
-            {isSubmitting ? "Updating..." : "Update password"}
-          </Button>
-
-          {error ? (
-            <div className="rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
-              {error}
+          {/* password strength bar */}
+          {newPassword.length > 0 && (
+            <div className="flex gap-1 pt-1">
+              {[1, 2, 3, 4].map((level) => {
+                const strength = Math.min(Math.floor(newPassword.length / 3), 4)
+                const filled = level <= strength
+                const color =
+                  strength <= 1 ? "bg-destructive" :
+                  strength <= 2 ? "bg-secondary-400" :
+                  strength <= 3 ? "bg-primary-400" :
+                  "bg-tropical-teal-500"
+                return (
+                  <div
+                    key={level}
+                    className={`h-1 flex-1 rounded-full transition-all duration-300 ${filled ? color : "bg-border"}`}
+                  />
+                )
+              })}
             </div>
-          ) : null}
+          )}
+        </div>
 
-          {message ? (
-            <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-              {message}
-            </div>
-          ) : null}
+        <button
+          id="reset-password-submit"
+          type="submit"
+          disabled={isSubmitting}
+          className="flex h-10 w-full items-center justify-center rounded-md bg-primary-500 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? "Updating…" : "Update password"}
+        </button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            <Link
-              to="/login"
-              className="font-medium text-secondary underline-offset-4 hover:underline"
-            >
-              Back to sign in
-            </Link>
-          </p>
-        </form>
-      </CardContent>
-    </Card>
+        {error ? (
+          <div className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2.5 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
+
+        {message ? (
+          <div className="rounded-lg border border-primary-500/25 bg-primary-500/8 px-3 py-2.5 text-sm text-primary-600">
+            {message}
+          </div>
+        ) : null}
+
+        <p className="text-center text-sm text-muted-foreground">
+          <Link
+            to="/login"
+            className="font-medium text-secondary-500 underline-offset-4 hover:underline"
+          >
+            ← Back to sign in
+          </Link>
+        </p>
+      </form>
+    </div>
   )
 }

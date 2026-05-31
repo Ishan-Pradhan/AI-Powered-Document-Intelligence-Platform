@@ -1,16 +1,9 @@
 import type { AxiosError } from "axios"
+import { Mail } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useLocation } from "react-router-dom"
 
 import { resendVerificationEmail } from "@/api/auth"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuthStore } from "@/store/auth.store"
@@ -31,11 +24,9 @@ function EmailVerificationPage() {
 
   useEffect(() => {
     if (secondsLeft <= 0) return
-
     const timeoutId = window.setTimeout(() => {
       setSecondsLeft((s) => (s <= 1 ? 0 : s - 1))
     }, 1000)
-
     return () => window.clearTimeout(timeoutId)
   }, [secondsLeft])
 
@@ -71,73 +62,77 @@ function EmailVerificationPage() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="border-b">
-        <CardTitle>Check your email</CardTitle>
-        <CardDescription>
-          We sent a verification link to your email address.
-        </CardDescription>
-      </CardHeader>
+    <div className="w-full max-w-sm">
+      {/* icon */}
+      <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-primary-500/10">
+        <Mail className="size-5 text-primary-500" strokeWidth={1.75} />
+      </div>
 
-      <CardContent className="pt-4">
-        <div className="grid gap-3">
-          <p className="text-sm text-muted-foreground">
-            Verify your email to continue.
-          </p>
+      {/* heading */}
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-foreground">
+        Check your inbox
+      </h1>
+      <p className="mb-8 text-sm text-muted-foreground">
+        We sent a verification link to your email. Click it to activate your account.
+      </p>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor="verifyEmail">Email</Label>
-            <Input
-              id="verifyEmail"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={isSubmitting || secondsLeft > 0}
-            onClick={handleResend}
-          >
-            {isSubmitting
-              ? "Sending..."
-              : secondsLeft > 0
-                ? `Resend email in ${formattedCountdown}`
-                : "Resend verification email"}
-          </Button>
-
-          {submitError ? (
-            <div className="rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
-              {submitError}
-            </div>
-          ) : null}
-
-          {submitMessage ? (
-            <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-              {submitMessage}
-            </div>
-          ) : null}
-
-          {devVerifyLink ? (
-            <a
-              className="text-xs text-primary underline-offset-4 hover:underline"
-              href={devVerifyLink}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open verification link (dev)
-            </a>
-          ) : null}
+      {/* form */}
+      <div className="grid gap-4">
+        <div className="grid gap-1.5">
+          <Label htmlFor="verifyEmail" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Email address
+          </Label>
+          <Input
+            id="verifyEmail"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="h-10 bg-muted/40"
+          />
         </div>
-      </CardContent>
-    </Card>
-  );
+
+        <button
+          id="resend-verification-btn"
+          type="button"
+          disabled={isSubmitting || secondsLeft > 0}
+          onClick={handleResend}
+          className="flex h-10 w-full items-center justify-center rounded-md bg-primary-500 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting
+            ? "Sending…"
+            : secondsLeft > 0
+              ? `Resend in ${formattedCountdown}`
+              : "Resend verification email"}
+        </button>
+
+        {submitError ? (
+          <div className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2.5 text-sm text-destructive">
+            {submitError}
+          </div>
+        ) : null}
+
+        {submitMessage ? (
+          <div className="rounded-lg border border-primary-500/25 bg-primary-500/8 px-3 py-2.5 text-sm text-primary-600">
+            {submitMessage}
+          </div>
+        ) : null}
+
+        {devVerifyLink ? (
+          <a
+            className="text-xs text-primary-500 underline-offset-4 hover:underline"
+            href={devVerifyLink}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open verification link (dev)
+          </a>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
-export default EmailVerificationPage;
+export default EmailVerificationPage
