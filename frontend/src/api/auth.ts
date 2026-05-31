@@ -21,6 +21,9 @@ export const login = (payload: LoginInput) =>
 export const register = (payload: RegisterInput) =>
   api.post<ApiResponse<AuthUserDto>>("/api/v1/auth/register", payload)
 
+export const logout = () =>
+  api.post<ApiResponse<AuthUserDto>>("/api/v1/auth/logout", {})
+
 export type ResendVerificationEmailResponse = {
   success: boolean
   message: string
