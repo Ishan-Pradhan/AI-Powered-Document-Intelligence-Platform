@@ -1,4 +1,4 @@
-import { Message } from "../models/Messages.models";
+import { Message } from "../models/Messages.model";
 import { Chat } from "../models/chats.model";
 
 export const messagesRepository = {

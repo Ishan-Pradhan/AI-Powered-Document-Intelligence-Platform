@@ -1,8 +1,8 @@
-import { User } from './users.models';
+import { User } from './users.model';
 import { Chat } from './chats.model';
-import { Message } from './Messages.models';
-import { Document } from './documents.models';
-import { Chunk } from './chunks.models';
+import { Message } from './Messages.model';
+import { Document } from './documents.model';
+import { Chunk } from './chunks.model';
 
 User.hasMany(Chat,   { foreignKey: 'userId', as: 'chats' });
 Chat.belongsTo(User, { foreignKey: 'userId', as: 'owner' });

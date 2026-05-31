@@ -1,4 +1,4 @@
-import { User } from "../models/users.models";
+import { User } from "../models/users.model";
 import { UserCreationAttributes } from "../types/users.types";
 
 export const userRepository = {

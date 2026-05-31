@@ -1,6 +1,6 @@
 import { sequelize } from "../config/db";
-import { Chunk } from "../models/chunks.models";
-import { Document } from "../models/documents.models";
+import { Chunk } from "../models/chunks.model";
+import { Document } from "../models/documents.model";
 import { DEFAULT_VECTOR_SEARCH_LIMIT } from "../constants";
 
 export const chunksRepository = {

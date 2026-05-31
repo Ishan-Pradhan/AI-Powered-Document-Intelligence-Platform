@@ -1,4 +1,4 @@
-import { Document } from "../models/documents.models";
+import { Document } from "../models/documents.model";
 
 export const documentsRepository = {
     create: async (data: { title: string; filename: string; fileType: string; status?: string; uploadedBy?: string }) => {
