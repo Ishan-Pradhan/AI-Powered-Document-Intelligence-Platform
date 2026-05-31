@@ -289,6 +289,10 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
       throw new ApiError(403, "Your account has been blocked");
     }
 
+    if (!user.isVerified) {
+      throw new ApiError(403, "Your account is not verified. Please verify your email");
+    }
+
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user.id)
     return res.status(200).cookie("accessToken", accessToken, baseCookieOptions).cookie("refreshToken", refreshToken, baseCookieOptions).json({
       success: true,

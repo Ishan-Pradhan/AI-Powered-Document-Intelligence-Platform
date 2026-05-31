@@ -31,7 +31,38 @@ export const sendVerificationEmail = async (to: string, token: string) => {
     from,
     to,
     subject: "Verify your email",
-    text: `Verify your email using this link: ${verifyLink}`,
+    html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <h2 style="color: #2aaad5;">Verify your email</h2>
+      
+      <p>Welcome! You're almost ready to start using the platform.</p>
+      
+      <p>Please confirm your email address by clicking the button below:</p>
+      
+      <a href="${verifyLink}" 
+         style="
+           display: inline-block;
+           padding: 12px 20px;
+           margin: 16px 0;
+           background-color: #2aaad5;
+           color: #ffffff;
+           text-decoration: none;
+           border-radius: 6px;
+           font-weight: bold;
+         ">
+         Verify Email
+      </a>
+
+      <p>If the button doesn't work, you can also use this link:</p>
+      <p><a href="${verifyLink}">verify</a></p>
+
+      <hr style="margin: 24px 0;" />
+
+      <p style="font-size: 12px; color: #777;">
+        If you didn’t create an account, you can safely ignore this email.
+      </p>
+    </div>
+  `,
   });
 
   return { verifyLink };
@@ -48,7 +79,43 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
     from,
     to,
     subject: "Reset your password",
-    text: `Reset your password using this link: ${resetLink}`,
+    html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      
+      <h2 style="color: #e53935;">Reset your password</h2>
+      
+      <p>We received a request to reset your password.</p>
+      
+      <p>If you made this request, click the button below to set a new password:</p>
+
+      <a href="${resetLink}"
+        style="
+          display: inline-block;
+          padding: 12px 20px;
+          margin: 16px 0;
+          background-color: #e53935;
+          color: #ffffff;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: bold;
+        ">
+        Reset Password
+      </a>
+
+      <p>If the button doesn’t work, you can also use this link:</p>
+      <p><a href="${resetLink}">Reset your password</a></p>
+
+      <hr style="margin: 24px 0;" />
+
+      <p style="font-size: 12px; color: #777;">
+        If you didn’t request this, you can safely ignore this email. Your password will remain unchanged.
+      </p>
+
+      <p style="font-size: 12px; color: #777;">
+        For security, this link will expire after a limited time.
+      </p>
+    </div>
+  `,
   });
 
   return { resetLink };
