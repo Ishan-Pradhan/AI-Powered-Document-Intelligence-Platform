@@ -3,25 +3,26 @@ import { sequelize } from './config/db';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import './models';
 
 dotenv.config();
 
 const app = express();
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
-console.log("CORS configured for:", process.env.FRONTEND_URL)
-
 
 //routes
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
+import aiRoutes from './routes/ai.routes';
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/ai", aiRoutes);
+
 
 
 app.get("/", (_req: Request, res: Response) => {
