@@ -19,6 +19,10 @@ export const Chunk = sequelize.define('Chunk', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    embeddings: {
+        type: DataTypes.ARRAY(DataTypes.FLOAT),
+        allowNull: true,
+    },
     metadata: {
         type: DataTypes.JSONB,
         defaultValue: {},
