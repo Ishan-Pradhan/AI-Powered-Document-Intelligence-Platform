@@ -3,6 +3,7 @@ import { sequelize } from './config/db';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { limiter } from './middlewares/rateLimiter.middleware';
 import './models';
 
 dotenv.config();
@@ -13,6 +14,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(limiter);
+app.set("trust proxy", 1);
 
 //routes
 import authRoutes from './routes/auth.routes';

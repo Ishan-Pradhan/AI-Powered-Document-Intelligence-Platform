@@ -80,7 +80,7 @@ export const chatWithDocument = async (req: AuthRequest, res: Response): Promise
             context = matchedChunks.map(c => c.text).join('\n\n---\n\n');
         }
 
-        // 4. Generate Answer using LangChain Gemini service
+        // 4. Generate Answer using LangChain ai service
         const answer = await generateAnswer(message, context, history);
 
         // 5. Track source references used to answer
