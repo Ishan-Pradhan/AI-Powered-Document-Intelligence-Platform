@@ -10,8 +10,5 @@ Chat.belongsTo(User, { foreignKey: 'userId', as: 'owner' });
 Chat.hasMany(Message, { foreignKey: 'chatId', as: 'messages' });
 Message.belongsTo(Chat, { foreignKey: 'chatId', as: 'chat' });
 
-Document.hasMany(Chat, { foreignKey: 'documentId', as: 'chats' });
-Chat.belongsTo(Document, { foreignKey: 'documentId', as: 'document' });
-
 Document.hasMany(Chunk, { foreignKey: 'documentId', as: 'chunks' });
 Chunk.belongsTo(Document, { foreignKey: 'documentId', as: 'document' });

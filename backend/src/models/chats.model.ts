@@ -10,15 +10,6 @@ export const Chat = sequelize.define('Chat', {
         type: DataTypes.UUID,
         allowNull: false,
     },
-    documentId: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: {
-            model: 'Documents',
-            key: 'id'
-        },
-        onDelete: 'CASCADE'
-    },
     title: {
         type: DataTypes.STRING,
         defaultValue: 'New Conversation',

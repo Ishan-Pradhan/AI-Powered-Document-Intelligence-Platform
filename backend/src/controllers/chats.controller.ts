@@ -25,8 +25,7 @@ export const chatWithDocument = asyncHandler(async (req: AuthRequest, res: Respo
             const userId = req.user?.id || null;
             const newChat = await chatsRepository.create({
                 userId,
-                title: 'New Conversation',
-                documentId: activeDocumentId || null
+                title: 'New Conversation'
             });
             activeChatId = newChat.get('id') as string;
         } else {
@@ -37,14 +36,8 @@ export const chatWithDocument = asyncHandler(async (req: AuthRequest, res: Respo
                 await chatsRepository.create({
                     id: activeChatId,
                     userId,
-                    title: 'New Conversation',
-                    documentId: activeDocumentId || null
+                    title: 'New Conversation'
                 });
-            } else {
-                // Resolve documentId from the chat record if not provided in the request
-                if (!activeDocumentId) {
-                    activeDocumentId = existingChat.get('documentId') as string;
-                }
             }
         }
 

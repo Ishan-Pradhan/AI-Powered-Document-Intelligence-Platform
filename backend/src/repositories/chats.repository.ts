@@ -5,7 +5,7 @@ export const chatsRepository = {
         return await Chat.findByPk(id);
     },
 
-    create: async (data: { id?: string; userId?: string | null; title?: string; documentId?: string | null }) => {
+    create: async (data: { id?: string; userId?: string | null; title?: string }) => {
         return await Chat.create(data);
     },
 
