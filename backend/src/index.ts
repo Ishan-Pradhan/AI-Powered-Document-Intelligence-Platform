@@ -22,12 +22,12 @@ app.use(limiter);
 //routes
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
-import aiRoutes from './routes/chat.routes';
+import chatRoutes from './routes/chat.routes';
 import healthRoutes from './routes/health.routes';
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1/ai", aiRoutes);
+app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1", healthRoutes);
 
 
