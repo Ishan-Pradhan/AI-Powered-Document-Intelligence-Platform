@@ -1,29 +1,52 @@
-import { Request, Response, NextFunction } from 'express'
-import multer from 'multer'
-import { ValidationError } from 'sequelize'
-import { ApiError } from '../utils/ApiError'
+import { Request, Response, NextFunction } from "express";
+import multer from "multer";
+import { ValidationError } from "sequelize";
+import { ApiError } from "../utils/ApiError";
 
-const errorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
-  let error = err
+const errorHandler = (
+  err: any,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+) => {
+  let statusCode = 500;
+  let message = "Something went wrong";
+  let errors: unknown[] = [];
 
-  if (!(error instanceof ApiError)) {
-    const isMulterError = error instanceof multer.MulterError || error?.name === 'MulterError'
-    const isUploadValidationError = typeof error?.message === 'string' && error.message.toLowerCase().includes('unsupported file type')
-
-    const statusCode = error.statusCode || (error instanceof ValidationError || isMulterError || isUploadValidationError ? 400 : 500)
-    const message = error.message || "Something went wrong"
-    error = new ApiError(statusCode, message, error?.errors || [], err.stack)
+  // Handle known custom error
+  if (err instanceof ApiError) {
+    statusCode = err.statusCode;
+    message = err.message;
+    errors = err.errors || [];
   }
 
-  const response = {
-    ...error,
-    message: error.message,
-    ...(process.env.NODE_ENV === "development" ? { stack: error.stack } : {}),
+  // Sequelize validation error
+  else if (err instanceof ValidationError) {
+    statusCode = 400;
+    message = err.message;
+    errors = err.errors;
   }
 
-  console.error(`[Error] ${error.message}`)
+  // Multer error
+  else if (err instanceof multer.MulterError) {
+    statusCode = 400;
+    message = err.message;
+  }
 
-  return res.status(error.statusCode).json(response)
-}
+  // Generic JS error
+  else if (err instanceof Error) {
+    message = err.message;
+  }
 
-export { errorHandler }
+  console.error(`[Error] ${message}`, err);
+
+  return res.status(statusCode).json({
+    success: false,
+    message,
+    data: null,
+    errors,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
+};
+
+export { errorHandler };

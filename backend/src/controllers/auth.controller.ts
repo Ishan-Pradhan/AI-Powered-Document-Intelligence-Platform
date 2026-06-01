@@ -4,6 +4,8 @@ import { verificationRepository } from "../repositories/verification.repository"
 import { sendPasswordResetEmail, sendVerificationEmail } from "../services/email.service"
 import { AuthRequest, LoginUserTypes, RegisterUserTypes } from "../types/auth.types"
 import { ApiError } from "../utils/ApiError"
+import { ok } from "../utils/ApiResponse"
+import { asyncHandler } from "../utils/AsyncHandler"
 import { getGravatar } from "../utils/gravatar.utils"
 import { comparePassword, generateToken, hashPassword } from "../utils/security.utils"
 import { generateAccessAndRefereshTokens } from "../utils/token.utils"
@@ -77,9 +79,9 @@ export const registerUser = async (req: Request, res: Response) => {
 
 
 // Controller function to handle user login
-export const loginUser = async (req: Request, res: Response): Promise<Response> => {
+export const loginUser = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
   const { email, password } = req.body as LoginUserTypes
-  try {
+ 
     if (!email || !password) {
       throw new ApiError(400, "Email and password are required")
     }
@@ -112,7 +114,10 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user.id)
-    return res.status(200).cookie("accessToken", accessToken, baseCookieOptions).cookie("refreshToken", refreshToken, baseCookieOptions).json({
+    return res.status(200)
+    .cookie("accessToken", accessToken, baseCookieOptions)
+    .cookie("refreshToken", refreshToken, baseCookieOptions)
+    .json({
       success: true,
       data: {
         id: user.id,
@@ -122,19 +127,11 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
       },
       message: "User logged in successfully"
     })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-
-    const message = error instanceof Error ? error.message : "Something went wrong"
-    return res.status(500).json({ message })
-  }
-}
+ 
+})
 
 // Controller function to handle user logout
-export const logoutUser = async (req: Request, res: Response): Promise<Response> => {
-  try {
+export const logoutUser = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const accessToken = req.cookies.accessToken
 
     if (accessToken) {
@@ -154,19 +151,11 @@ export const logoutUser = async (req: Request, res: Response): Promise<Response>
       success: true,
       message: "User logged out successfully"
     })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-    return res.status(500).json({
-      message: "Internal server error",
-    });
-  }
-}
+
+})
 
 // Controller function to refresh access token using refresh token
-export const refreshAccessToken = async (req: Request, res: Response): Promise<Response> => {
-  try {
+export const refreshAccessToken =asyncHandler( async (req: Request, res: Response): Promise<Response> => {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
       throw new ApiError(401, "Unauthorized: No refresh token provided");
@@ -182,17 +171,11 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<R
       data: user,
       message: "Token refreshed successfully"
     });
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    return res.status(500).json({ message: "Internal server error" });
-  }
-}
+})
 
 //change password (for logged in users)
-export const changePassword = async (req: AuthRequest, res: Response): Promise<Response> => {
-  try {
+export const changePassword = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+ 
     const userId = req.user?.id
     const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string }
 
@@ -217,24 +200,13 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<R
     user.password = await hashPassword(newPassword)
     await user.save()
 
-    return res.status(200).json({
-      success: true,
-      message: 'Password changed successfully',
-    })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-    const message = error instanceof Error ? error.message : 'Something went wrong'
-    return res.status(500).json({ message })
-  }
-}
+    return ok(res, null, 'Password changed successfully', 200)
+    
+})
 
 // Controller function to handle forgot password (sends reset link)
-export const forgotPassword = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const validatedBody = req.validated?.body as { email?: unknown } | undefined
-    const email = (validatedBody?.email ?? (req.body as any)?.email) as unknown
+export const forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+    const {email } = req.body as { email?: unknown }
     if (!email || typeof email !== "string") {
       throw new ApiError(400, "Email is required")
     }
@@ -253,7 +225,6 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
   })
 }
 
-
     const resetToken = generateToken()
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
     await verificationRepository.deletePasswordResetTokensForUser(user.id)
@@ -265,27 +236,17 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
       console.error('Failed to send password reset email', emailErr)
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "If an account exists for this email, a password reset link has been sent.",
-    })
-
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-    const message = error instanceof Error ? error.message : "Something went wrong"
-    return res.status(500).json({ message })
-  }
-}
+    return ok(res, null, "If an account exists for this email, a password reset link has been sent.", 200)
+})
 
 
 // Controller to reset password using token (public)
-export const resetPassword = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const validatedBody = req.validated?.body as { token?: unknown; newPassword?: unknown } | undefined
-    const token = (validatedBody?.token ?? (req.body as any)?.token) as unknown
-    const newPassword = (validatedBody?.newPassword ?? (req.body as any)?.newPassword) as unknown
+export const resetPassword =asyncHandler( async (req: Request, res: Response): Promise<Response> => {
+
+   const { token, newPassword } = req.body as {
+  token?: string;
+  newPassword?: string;
+};
 
     if (!token || typeof token !== 'string') {
       throw new ApiError(400, 'Reset token is required')
@@ -315,12 +276,5 @@ export const resetPassword = async (req: Request, res: Response): Promise<Respon
 
     await verificationRepository.deletePasswordResetTokensForUser(user.id)
 
-    return res.status(200).json({ success: true, message: 'Password has been reset' })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-    const message = error instanceof Error ? error.message : 'Something went wrong'
-    return res.status(500).json({ message })
-  }
-}
+    return ok(res, null, 'Password has been reset', 200)
+})

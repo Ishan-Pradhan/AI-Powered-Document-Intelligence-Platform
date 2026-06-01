@@ -2,10 +2,11 @@ import { Response } from "express"
 import { userRepository } from "../repositories/users.repository"
 import { AuthRequest } from "../types/auth.types"
 import { ApiError } from "../utils/ApiError"
+import { asyncHandler } from "../utils/AsyncHandler"
+import { ok } from "../utils/ApiResponse"
 
 //block and unblock user (admin only)
-export const blockAndUnblockUser = async (req: AuthRequest, res: Response) => {
-    try {
+export const blockAndUnblockUser = asyncHandler(async (req: AuthRequest, res: Response) => {
         const userId = req.params.id as string
         const user = await userRepository.findById(userId)
         if (!user) {
@@ -13,12 +14,5 @@ export const blockAndUnblockUser = async (req: AuthRequest, res: Response) => {
         }
         user.isBlocked = !user.isBlocked
         await user.save()
-        return res.status(200).json({ success: true, message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully` })
-    } catch (error) {
-        if (error instanceof ApiError) {
-            return res.status(error.statusCode).json({ message: error.message })
-        }
-        const message = error instanceof Error ? error.message : 'Something went wrong'
-        return res.status(500).json({ message })
-    }
-}
+        return ok(res, null, `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully` )
+})

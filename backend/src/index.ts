@@ -4,33 +4,45 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { limiter } from './middlewares/rateLimiter.middleware';
+import { errorHandler } from './middlewares/error.middleware';
 import './models';
 
 dotenv.config();
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(limiter);
-app.set("trust proxy", 1);
 
 //routes
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import aiRoutes from './routes/ai.routes';
+import healthRoutes from './routes/health.routes';
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/ai", aiRoutes);
+app.use("/api/v1", healthRoutes);
 
 
 
 app.get("/", (_req: Request, res: Response) => {
   res.status(200).send("<h1>Hello World</h1>")
 })
+
+// 404 handler
+app.use((_req: Request, res: Response) => {
+  return res.status(404).json({ success: false, message: "Route not found" });
+});
+
+// Centralized error handler
+app.use(errorHandler);
 
 export const connectDB = async () => {
   try {

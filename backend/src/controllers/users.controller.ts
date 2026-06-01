@@ -3,12 +3,12 @@ import { ApiError } from "../utils/ApiError"
 import type { Request, Response } from "express"
 import jwt from "jsonwebtoken"
 import { getGravatar } from "../utils/gravatar.utils"
-
-
+import { asyncHandler } from "../utils/AsyncHandler"
+import { ok } from "../utils/ApiResponse"
 
 // Controller function to get current user details
-export const getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
-  try {
+export const getCurrentUser = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+
     const accessToken = req.cookies.accessToken;
     if (!accessToken) {
       throw new ApiError(401, "Unauthorized: No access token provided");
@@ -25,25 +25,16 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<Respo
       user.avatarUrl = getGravatar(user.email)
       await user.save()
     }
-    return res.status(200).json({
-      success: true,
-      data: {
-        id: user?.id,
-        name: user?.name,
-        email: user?.email,
-        avatarUrl: user?.avatarUrl,
-        isVerified: user?.isVerified,
-        role: user?.role,
-      },
-      message: "Current user retrieved successfully"
-    });
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    return res.status(500).json({ message: "Internal server error" })
-  }
-}
+
+    return ok(res,  {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      isVerified: user.isVerified,
+      role: user.role
+    }, "Current user retrieved successfully");
+})
 
 
 

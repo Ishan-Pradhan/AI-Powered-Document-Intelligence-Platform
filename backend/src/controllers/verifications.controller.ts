@@ -6,12 +6,12 @@ import { generateToken } from "../utils/security.utils";
 import { generateAccessAndRefereshTokens } from "../utils/token.utils";
 import type { Request, Response } from "express";
 import { sendVerificationEmail } from "../services/email.service";
+import { asyncHandler } from "../utils/AsyncHandler";
 
 //verify email 
-export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const validatedQuery = req.validated?.query as { token?: unknown } | undefined;
-    const token = (validatedQuery?.token ?? (req.query as any)?.token) as unknown;
+export const verifyEmail =asyncHandler( async (req: Request, res: Response): Promise<void> => {
+   
+  const token = req.query.token as string | undefined;
 
     if (!token || typeof token !== "string") {
       throw new ApiError(400, "Verification token is required")
@@ -91,21 +91,11 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
         message: "Email verified successfully",
       })
     return
-  } catch (error) {
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ message: error.message })
-      return
-    }
-
-    const message = error instanceof Error ? error.message : "Something went wrong"
-    res.status(500).json({ message })
-    return
   }
-}
+)
 
 // resend verification link (for users who didn't verify the first time)
-export const resendVerificationEmail = async (req: Request, res: Response): Promise<Response> => {
-  try {
+export const resendVerificationEmail = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const validatedBody = req.validated?.body as { email?: unknown } | undefined
     const email = (validatedBody?.email ?? (req.body as any)?.email) as unknown
 
@@ -142,12 +132,5 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
       message: "If an account exists for this email, a verification link has been sent.",
       ...(process.env.NODE_ENV === "development" && verifyLink ? { verifyLink } : {}),
     })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-
-    const message = error instanceof Error ? error.message : "Something went wrong"
-    return res.status(500).json({ message })
-  }
-}
+ 
+})

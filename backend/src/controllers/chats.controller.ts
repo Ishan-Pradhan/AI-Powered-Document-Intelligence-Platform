@@ -6,13 +6,16 @@ import { generateAnswer } from '../services/ai.service';
 import { messagesRepository } from '../repositories/messages.repository';
 import { embedQueryText } from '../services/embedding.service';
 import { DEFAULT_VECTOR_SEARCH_LIMIT } from '../constants';
+import { asyncHandler } from '../utils/AsyncHandler';
+import { ApiError } from '../utils/ApiError';
+import { ok } from '../utils/ApiResponse';
 
-export const chatWithDocument = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+export const chatWithDocument = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+   
         const { chatId, message, documentId } = req.body;
 
         if (!message) {
-            return res.status(400).json({ error: 'message is required' });
+            throw new ApiError(400, 'message is required');
         }
 
         let activeChatId = chatId;
@@ -111,138 +114,115 @@ export const chatWithDocument = async (req: AuthRequest, res: Response): Promise
             answer: answerContent,
             sourcesUsed: storedSources
         });
-    } catch (error: any) {
-        console.error("Chat error:", error);
-        return res.status(500).json({ error: 'Failed to process chat response' });
-    }
-};
 
-export const getUserChats = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+});
+
+export const getUserChats = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+
         const userId = req.user?.id;
         if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            throw new ApiError(401, 'Unauthorized');
         }
         const chats = await chatsRepository.findAllByUserId(userId);
-        return res.status(200).json({ success: true, chats });
-    } catch (error: any) {
-        console.error("Get user chats error:", error);
-        return res.status(500).json({ error: 'Failed to fetch chats' });
-    }
-};
+        return ok(res, chats, "User chats retrieved successfully");
+   
+});
 
-export const deleteChat = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+export const deleteChat = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+  
         const userId = req.user?.id;
         const { chatId } = req.params;
         if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            throw new ApiError(401, 'Unauthorized');
         }
 
         const chat = await chatsRepository.findById(chatId as string);
         if (!chat) {
-            return res.status(404).json({ error: 'Chat not found' });
+            throw new ApiError(404, 'Chat not found');
         }
 
         if (chat.get('userId') !== userId) {
-            return res.status(403).json({ error: 'Forbidden' });
+            throw new ApiError(403, 'Forbidden');
         }
 
         await chatsRepository.delete(chatId as string);
-        return res.status(200).json({ success: true, message: 'Chat deleted successfully' });
-    } catch (error: any) {
-        console.error("Delete chat error:", error);
-        return res.status(500).json({ error: 'Failed to delete chat' });
-    }
-};
+        return ok(res, null, 'Chat deleted successfully');
+    
+});
 
-export const getUserMessages = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+export const getUserMessages = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
         const userId = req.user?.id;
-        if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-        const messages = await messagesRepository.findByUserId(userId);
-        return res.status(200).json({ success: true, messages });
-    } catch (error: any) {
-        console.error("Get user messages error:", error);
-        return res.status(500).json({ error: 'Failed to fetch messages' });
-    }
-};
 
-export const deleteMessage = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+        if (!userId) {
+            throw new ApiError(401, 'Unauthorized');
+        }
+
+        const messages = await messagesRepository.findByUserId(userId);
+        return ok(res, messages, "User messages retrieved successfully");
+});
+
+export const deleteMessage = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+
         const userId = req.user?.id;
         const { messageId } = req.params;
         if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            throw new ApiError(401, 'Unauthorized');
         }
 
         const messages = await messagesRepository.findByUserId(userId);
         const messageExists = messages.some(m => m.get('id') === messageId);
         if (!messageExists) {
-            return res.status(404).json({ error: 'Message not found or not owned by user' });
+            throw new ApiError(404, 'Message not found or not owned by user');
         }
 
         await messagesRepository.delete(messageId as string);
-        return res.status(200).json({ success: true, message: 'Message deleted successfully' });
-    } catch (error: any) {
-        console.error("Delete message error:", error);
-        return res.status(500).json({ error: 'Failed to delete message' });
-    }
-};
+        return ok(res, null, 'Message deleted successfully');
+});
 
-export const getChatMessages = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+export const getChatMessages = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+
         const userId = req.user?.id;
         const { chatId } = req.params;
         if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            throw new ApiError(401, 'Unauthorized');
         }
 
         const chat = await chatsRepository.findById(chatId as string);
         if (!chat) {
-            return res.status(404).json({ error: 'Chat not found' });
+            throw new ApiError(404, 'Chat not found');
         }
 
         if (chat.get('userId') !== userId) {
-            return res.status(403).json({ error: 'Forbidden' });
+            throw new ApiError(403, 'Forbidden');
         }
 
         const messages = await messagesRepository.findByChatId(chatId as string);
-        return res.status(200).json({ success: true, messages });
-    } catch (error: any) {
-        console.error("Get chat messages error:", error);
-        return res.status(500).json({ error: 'Failed to fetch messages for this chat' });
-    }
-};
+        return ok(res, messages, "Chat messages retrieved successfully");
 
-export const renameChat = async (req: AuthRequest, res: Response): Promise<Response> => {
-    try {
+});
+
+export const renameChat = asyncHandler(async (req: AuthRequest, res: Response): Promise<Response> => {
+  
         const userId = req.user?.id;
         const { chatId } = req.params;
         const { title } = req.body;
 
         if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            throw new ApiError(401, 'Unauthorized');
         }
         if (!title) {
-            return res.status(400).json({ error: 'Title is required' });
+            throw new ApiError(400, 'Title is required');
         }
 
         const chat = await chatsRepository.findById(chatId as string);
         if (!chat) {
-            return res.status(404).json({ error: 'Chat not found' });
+            throw new ApiError(404, 'Chat not found');
         }
 
         if (chat.get('userId') !== userId) {
-            return res.status(403).json({ error: 'Forbidden' });
+            throw new ApiError(403, 'Forbidden');
         }
 
         await chatsRepository.updateTitle(chatId as string, title);
-        return res.status(200).json({ success: true, message: 'Chat renamed successfully' });
-    } catch (error: any) {
-        console.error("Rename chat error:", error);
-        return res.status(500).json({ error: 'Failed to rename chat' });
-    }
-};
+        return ok(res, null, 'Chat renamed successfully');
+});

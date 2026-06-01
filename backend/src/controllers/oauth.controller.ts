@@ -8,6 +8,7 @@ import { generateAccessAndRefereshTokens } from "../utils/token.utils"
 import { Request, Response } from "express"
 import crypto from "crypto"
 import { baseCookieOptions } from "../config/cookie.config"
+import { asyncHandler } from "../utils/AsyncHandler"
 
 
 export const googleAuthRedirect = async (_req: Request, res: Response) => {
@@ -37,8 +38,7 @@ export const googleAuthRedirect = async (_req: Request, res: Response) => {
   return res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
 }
 
-export const googleAuthCallback = async (req: Request, res: Response) => {
-  try {
+export const googleAuthCallback = asyncHandler(async (req: Request, res: Response) => {
     const code = req.query.code
     const state = req.query.state
     const cookieState = req.cookies?.google_oauth_state
@@ -132,12 +132,5 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
       .cookie("accessToken", accessToken, baseCookieOptions)
       .cookie("refreshToken", refreshToken, baseCookieOptions)
       .json({ success: true, message: "Google login successful" })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({ message: error.message })
-    }
-
-    const message = error instanceof Error ? error.message : "Something went wrong"
-    return res.status(500).json({ message })
-  }
-}
+ 
+})
