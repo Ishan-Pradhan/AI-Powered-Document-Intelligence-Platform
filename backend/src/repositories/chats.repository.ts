@@ -9,9 +9,22 @@ export const chatsRepository = {
         return await Chat.create(data);
     },
 
-    findAllByUserId: async (userId: string) => {
+    findAllByUserId: async (userId: string, options?: { limit?: number; offset?: number }) => {
+        const { limit, offset } = options || {};
         return await Chat.findAll({
             where: { userId },
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        });
+    },
+
+    findAndCountAllByUserId: async (userId: string, options?: { limit?: number; offset?: number }) => {
+        const { limit, offset } = options || {};
+        return await Chat.findAndCountAll({
+            where: { userId },
+            limit,
+            offset,
             order: [['createdAt', 'DESC']]
         });
     },

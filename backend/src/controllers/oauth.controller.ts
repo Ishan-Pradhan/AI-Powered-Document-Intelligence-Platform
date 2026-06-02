@@ -113,7 +113,8 @@ export const googleAuthCallback = asyncHandler(async (req: Request, res: Respons
     }
 
     if (user.isBlocked) {
-      throw new ApiError(403, "Your account has been blocked");
+      const errorRedirectUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?error=${encodeURIComponent("Your account has been blocked")}`
+      return res.redirect(errorRedirectUrl);
     }
 
 
