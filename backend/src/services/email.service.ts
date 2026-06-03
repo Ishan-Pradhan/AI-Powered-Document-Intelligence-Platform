@@ -1,13 +1,16 @@
-import nodemailer from "nodemailer";
+import nodemailer from 'nodemailer';
+import { env } from '../config/env';
 
 const getTransporter = () => {
-  const host = process.env.EMAIL_HOST;
-  const port = process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : undefined;
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+  const host = env.EMAIL_HOST;
+  const port = env.EMAIL_PORT ? Number(env.EMAIL_PORT) : undefined;
+  const user = env.EMAIL_USER;
+  const pass = env.EMAIL_PASS;
 
   if (!host || !port || !user || !pass) {
-    throw new Error("Missing SMTP env vars (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS)");
+    throw new Error(
+      'Missing SMTP env vars (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS)',
+    );
   }
 
   return nodemailer.createTransport({
@@ -18,20 +21,47 @@ const getTransporter = () => {
   });
 };
 
+// Send email verification link
 export const sendVerificationEmail = async (to: string, token: string) => {
-  const backendUrl =
-    process.env.BACKEND_URL ||
-    (process.env.PORT ? `http://localhost:${process.env.PORT}` : "http://localhost:3000");
+  const backendUrl = env.PORT
+    ? `http://localhost:${env.PORT}`
+    : 'http://localhost:8080';
 
   const verifyLink = `${backendUrl}/api/v1/auth/verify-email?token=${token}`;
-  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+
+  const from = env.EMAIL_FROM || env.EMAIL_USER;
 
   const transporter = getTransporter();
+
   await transporter.sendMail({
     from,
     to,
-    subject: "Verify your email",
-    html: `
+    subject: 'Verify your email',
+    html: verifyEmailTemplate(verifyLink),
+  });
+
+  return { verifyLink };
+};
+
+// send password reset email
+export const sendPasswordResetEmail = async (to: string, token: string) => {
+  const frontendUrl = env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
+
+  const from = env.EMAIL_FROM || env.EMAIL_USER;
+  const transporter = getTransporter();
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: 'Reset your password',
+    html: resetPasswordTemplate(resetLink),
+  });
+
+  return { resetLink };
+};
+
+const verifyEmailTemplate = (verifyLink: string) => `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
       <h2 style="color: #2aaad5;">Verify your email</h2>
       
@@ -62,24 +92,9 @@ export const sendVerificationEmail = async (to: string, token: string) => {
         If you didn’t create an account, you can safely ignore this email.
       </p>
     </div>
-  `,
-  });
+  `;
 
-  return { verifyLink };
-};
-
-export const sendPasswordResetEmail = async (to: string, token: string) => {
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  const resetLink = `${frontendUrl.replace(/\/$/, "")}/reset-password?token=${token}`;
-
-  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
-  const transporter = getTransporter();
-
-  await transporter.sendMail({
-    from,
-    to,
-    subject: "Reset your password",
-    html: `
+const resetPasswordTemplate = (resetLink: string) => `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
       
       <h2 style="color: #e53935;">Reset your password</h2>
@@ -115,8 +130,4 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
         For security, this link will expire after a limited time.
       </p>
     </div>
-  `,
-  });
-
-  return { resetLink };
-};
+  `;
