@@ -10,6 +10,9 @@ import { validate } from '../middlewares/validate.middleware';
 import {
   chatIdParamsSchema,
   chatWithDocumentSchema,
+  deleteDocumentSchema,
+  documentQuerySchema,
+  messageQuerySchema,
   renameChatSchema,
   uploadDocumentSchema,
 } from '../validations/ai.validation';
@@ -34,11 +37,13 @@ router
     uploadDocument,
   );
 
-router.route('/documents').get(verifyJWT, isAdmin, getAllDocuments);
+router
+  .route('/documents')
+  .get(verifyJWT, isAdmin, validate(documentQuerySchema), getAllDocuments);
 
 router
   .route('/documents/:documentId')
-  .delete(verifyJWT, isAdmin, deleteDocument);
+  .delete(verifyJWT, isAdmin, validate(deleteDocumentSchema), deleteDocument);
 
 // Chat & Message CRUD Routes
 router
@@ -52,6 +57,8 @@ router
 router
   .route('/chats/:chatId/messages')
   .get(verifyJWT, validate(chatIdParamsSchema), getChatMessages);
-router.route('/messages').get(verifyJWT, getUserMessages);
+router
+  .route('/messages')
+  .get(verifyJWT, validate(messageQuerySchema), getUserMessages);
 
 export default router;

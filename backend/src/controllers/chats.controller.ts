@@ -1,15 +1,16 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/auth.types';
 import { chatsRepository } from '../repositories/chats.repository';
-import { chunksRepository } from '../repositories/chunks.repository';
 import { generateAnswer } from '../services/ai.service';
 import { messagesRepository } from '../repositories/messages.repository';
-import { embedQueryText } from '../services/embedding.service';
-import { DEFAULT_VECTOR_SEARCH_LIMIT } from '../constants';
 import { asyncHandler } from '../utils/AsyncHandler';
 import { ApiError } from '../utils/ApiError';
 import { ok } from '../utils/ApiResponse';
+import { retrieveContext } from '../utils/rag/chat/retrieveContext.utils';
+import { assertChatOwnership } from '../utils/rag/chat/chatGuard.utils';
+import { SemanticSearchResult } from '../types/rag.types';
 
+// CHAT WITH DOCUMENT CONTEXT
 export const chatWithDocument = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
     const { chatId, message, documentId } = req.body;
@@ -18,91 +19,54 @@ export const chatWithDocument = asyncHandler(
       throw new ApiError(400, 'message is required');
     }
 
+    const userId = req.user?.id || null;
+    // 1. create or reuse chat
     let activeChatId = chatId;
-    let activeDocumentId = documentId;
 
     if (!activeChatId) {
-      const userId = req.user?.id || null;
       const newChat = await chatsRepository.create({
         userId,
-        title: message.trim().replace(/\s+/g, ' ').slice(0, 50),
+        title: message.trim().slice(0, 50),
       });
+
       activeChatId = newChat.get('id') as string;
-    } else {
-      // Ensure chat row exists (FK constraint)
-      const existingChat = await chatsRepository.findById(activeChatId);
-      if (!existingChat) {
-        const userId = req.user?.id || null;
-        await chatsRepository.create({
-          id: activeChatId,
-          userId,
-          title: message.trim().replace(/\s+/g, ' ').slice(0, 50),
-        });
-      }
     }
 
-    // 1. Save user query message to database (Repository)
+    // 2. store user message
     await messagesRepository.create({
       chatId: activeChatId,
       role: 'user',
       content: message,
     });
 
-    // 2. Fetch conversational history (Repository)
+    // 3. history
     const historyRecords = await messagesRepository.findByChatId(activeChatId);
+
     const history = historyRecords.map((m) => ({
       role: m.get('role') as string,
       content: m.get('content') as string,
     }));
 
-    // 3. Search Semantic Chunks for Context (Embed query -> search)
-    let context = '';
-    let matchedChunks: any[] = [];
-    try {
-      const queryVector = await embedQueryText(message);
-      matchedChunks = await chunksRepository.searchSemantic(
-        queryVector,
-        activeDocumentId,
-        DEFAULT_VECTOR_SEARCH_LIMIT,
-      );
+    // 4. RAG context retrieval
+    const { matchedChunks, context } = (await retrieveContext(
+      message,
+      documentId,
+    )) as {
+      matchedChunks: SemanticSearchResult[];
+      context: string;
+    };
 
-      // Fallback if semantic search returned 0 results (e.g., older documents with null embeddings)
-      if (!matchedChunks || matchedChunks.length === 0) {
-        console.warn(
-          'Semantic search returned 0 results, falling back to raw chunks.',
-        );
-        matchedChunks = await chunksRepository.findChunksByDocumentId(
-          activeDocumentId,
-          DEFAULT_VECTOR_SEARCH_LIMIT,
-        );
-      }
-
-      context = matchedChunks.map((c) => c.text).join('\n\n---\n\n');
-    } catch (err) {
-      // Fallback if semantic search fails entirely
-      console.warn('Semantic search failed, fetching raw chunks.', err);
-      matchedChunks = await chunksRepository.findChunksByDocumentId(
-        activeDocumentId,
-        DEFAULT_VECTOR_SEARCH_LIMIT,
-      );
-      context = matchedChunks.map((c) => c.text).join('\n\n---\n\n');
-    }
-
-    // 4. Generate Answer using LangChain ai service
+    // 5. LLM response
     const answer = await generateAnswer(message, context, history);
 
-    // 5. Track source references used to answer
-    const sourcesUsed = matchedChunks.map((c) => {
-      const docTitle =
-        c.documentTitle || (c.document ? c.document.title : 'Unknown Document');
-      return {
-        chunkId: c.id,
-        textPreview: c.text.substring(0, 100) + '...',
-        documentTitle: docTitle,
-      };
-    });
+    // 6. sources
+    const sourcesUsed = matchedChunks.map((c) => ({
+      chunkId: c.id,
+      textPreview: c.text.slice(0, 100),
+      documentTitle: c.documentTitle || 'Unknown Document',
+    }));
 
-    // 6. Save assistant answer to database (Repository)
+    // 7. store assistant message
     const savedAnswer = await messagesRepository.create({
       chatId: activeChatId,
       role: 'assistant',
@@ -110,56 +74,49 @@ export const chatWithDocument = asyncHandler(
       sourcesUsed,
     });
 
-    // Extract stored fields safely
-    const answerContent = savedAnswer.get('content') as string;
-    const storedSources = savedAnswer.get('sourcesUsed') as {
-      chunkId: string;
-      textPreview: string;
-      documentTitle: string;
-    }[];
-
     return res.status(200).json({
       success: true,
       chatId: activeChatId,
-      answer: answerContent,
-      sourcesUsed: storedSources,
+      answer: savedAnswer.get('content'),
+      sourcesUsed: savedAnswer.get('sourcesUsed'),
     });
   },
 );
 
+// GET USERS CHAT
 export const getUserChats = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
     const userId = req.user?.id;
+
     if (!userId) {
       throw new ApiError(401, 'Unauthorized');
     }
-    const chats = await chatsRepository.findAllByUserId(userId);
+    const chats = await chatsRepository.findPaginatedByUserId(userId);
+
     return ok(res, chats, 'User chats retrieved successfully');
   },
 );
 
+// DELETE CHAT
 export const deleteChat = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
     const userId = req.user?.id;
+
     const { chatId } = req.params;
+
     if (!userId) {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    const chat = await chatsRepository.findById(chatId as string);
-    if (!chat) {
-      throw new ApiError(404, 'Chat not found');
-    }
-
-    if (chat.get('userId') !== userId) {
-      throw new ApiError(403, 'Forbidden');
-    }
+    await assertChatOwnership(chatId as string, userId);
 
     await chatsRepository.delete(chatId as string);
+
     return ok(res, null, 'Chat deleted successfully');
   },
 );
 
+// GET USERS MESSAGES
 export const getUserMessages = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
     const userId = req.user?.id;
@@ -173,29 +130,21 @@ export const getUserMessages = asyncHandler(
   },
 );
 
-
+// GET CHAT MESSAGES
 export const getChatMessages = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
     const userId = req.user?.id;
     const { chatId } = req.params;
-    if (!userId) {
-      throw new ApiError(401, 'Unauthorized');
-    }
 
-    const chat = await chatsRepository.findById(chatId as string);
-    if (!chat) {
-      throw new ApiError(404, 'Chat not found');
-    }
-
-    if (chat.get('userId') !== userId) {
-      throw new ApiError(403, 'Forbidden');
-    }
+    await assertChatOwnership(chatId as string, userId as string);
 
     const messages = await messagesRepository.findByChatId(chatId as string);
+
     return ok(res, messages, 'Chat messages retrieved successfully');
   },
 );
 
+// RENAME CHAT
 export const renameChat = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
     const userId = req.user?.id;
@@ -205,20 +154,15 @@ export const renameChat = asyncHandler(
     if (!userId) {
       throw new ApiError(401, 'Unauthorized');
     }
+
     if (!title) {
       throw new ApiError(400, 'Title is required');
     }
 
-    const chat = await chatsRepository.findById(chatId as string);
-    if (!chat) {
-      throw new ApiError(404, 'Chat not found');
-    }
-
-    if (chat.get('userId') !== userId) {
-      throw new ApiError(403, 'Forbidden');
-    }
+    await assertChatOwnership(chatId as string, userId as string);
 
     await chatsRepository.updateTitle(chatId as string, title);
+
     return ok(res, null, 'Chat renamed successfully');
   },
 );
