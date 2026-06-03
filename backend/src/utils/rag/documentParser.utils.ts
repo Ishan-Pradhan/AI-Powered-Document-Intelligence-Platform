@@ -3,57 +3,146 @@ import * as XLSX from 'xlsx';
 import PdfParse from 'pdf-parse-new';
 
 /**
- * Parses Excel files (.xlsx, .xls) and CSV files into semantic text rows
+ * Safety limit for uploaded files (adjust as needed)
  */
-const parseSpreadsheet = (fileBuffer: Buffer): string => {
-    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-    let fullText = '';
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-    for (const sheetName of workbook.SheetNames) {
-        const sheet = workbook.Sheets[sheetName];
-        if (!sheet) continue;
-        // Convert sheet to JSON array of objects
-        const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
-
-        fullText += `--- Sheet: ${sheetName} ---\n`;
-        rows.forEach((row, index) => {
-            const rowString = Object.entries(row)
-                .map(([header, val]) => `${header}: ${val}`)
-                .join(', ');
-
-            fullText += `Row ${index + 1}: ${rowString}\n`;
-        });
-        fullText += '\n';
-    }
-
-    return fullText;
+/**
+ * Clean PDF text for better chunking + embeddings
+ */
+const cleanText = (text: string): string => {
+  return text
+    .replace(/\r/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 };
 
 /**
- * Extracts raw text from document file buffers based on their MIME type
+ * Parses Excel (.xlsx, .xls) files into structured text
  */
-export const parseDocumentBuffer = async (fileBuffer: Buffer, mimeType: string): Promise<string> => {
-    // 1. PDF Files
-    if (mimeType === 'application/pdf') {
-        const data = await PdfParse(fileBuffer);
-        return data.text;
-    }
+const parseSpreadsheet = (fileBuffer: Buffer): string => {
+  const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+  let fullText = '';
 
-    // 2. Microsoft Word DOCX Files
-    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const data = await mammoth.extractRawText({ buffer: fileBuffer });
-        return data.value;
-    }
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
 
-    // 3. Tabular Excel & CSV Files
-    if (
-        mimeType === 'text/csv' ||
-        mimeType === 'application/vnd.ms-excel' || // .xls
-        mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
-    ) {
-        return parseSpreadsheet(fileBuffer);
-    }
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
+      defval: '',
+      raw: false,
+    });
 
-    // 4. Plain Text and Markdown (.txt, .md) are treated as plain text
-    return fileBuffer.toString('utf-8');
+    fullText += `\n=== SHEET: ${sheetName} ===\n`;
+
+    rows.forEach((row, i) => {
+      const rowString = Object.entries(row)
+        .map(([key, value]) => `${String(key).trim()}: ${String(value).trim()}`)
+        .join(' | ');
+
+      fullText += `Row ${i + 1}: ${rowString}\n`;
+    });
+
+    fullText += '\n';
+  }
+
+  return fullText.trim();
+};
+
+/**
+ * Parses CSV specifically (better than generic XLSX fallback)
+ */
+const parseCSV = (fileBuffer: Buffer): string => {
+  const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+
+  if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+    return '';
+  }
+  const sheetNames = workbook.SheetNames;
+
+  const firstSheetName = sheetNames?.[0];
+
+  if (typeof firstSheetName !== 'string') {
+    return '';
+  }
+
+  const sheet = workbook.Sheets[firstSheetName];
+
+  if (!sheet) return '';
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
+    defval: '',
+    raw: false,
+  });
+
+  return rows
+    .map((row, i) => {
+      const rowString = Object.entries(row)
+        .map(([k, v]) => `${String(k)}: ${String(v ?? '')}`)
+        .join(' | ');
+
+      return `Row ${i + 1}: ${rowString}`;
+    })
+    .join('\n');
+};
+/**
+ * Extracts text from different document types
+ */
+export const parseDocumentBuffer = async (
+  fileBuffer: Buffer,
+  mimeType: string,
+): Promise<string> => {
+  // 🔒 File size guard
+  if (fileBuffer.length > MAX_FILE_SIZE) {
+    throw new Error('File too large. Max allowed size is 20MB.');
+  }
+
+  /**
+   * 1. PDF
+   */
+  if (mimeType === 'application/pdf') {
+    const data = await PdfParse(fileBuffer);
+    return cleanText(data.text);
+  }
+
+  /**
+   * 2. DOCX (Word)
+   */
+  if (
+    mimeType ===
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    const data = await mammoth.extractRawText({ buffer: fileBuffer });
+
+    return cleanText(
+      data.value
+        .replace(/\r/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim(),
+    );
+  }
+
+  /**
+   * 3. Excel / XLSX
+   */
+  if (
+    mimeType ===
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    mimeType === 'application/vnd.ms-excel'
+  ) {
+    return parseSpreadsheet(fileBuffer);
+  }
+
+  /**
+   * 4. CSV
+   */
+  if (mimeType === 'text/csv') {
+    return parseCSV(fileBuffer);
+  }
+
+  /**
+   * 5. TXT / MD fallback
+   */
+  return cleanText(fileBuffer.toString('utf-8'));
 };

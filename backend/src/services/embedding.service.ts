@@ -1,23 +1,28 @@
-import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
-import dotenv from "dotenv";
-import { DEFAULT_EMBEDDING_MODEL } from "../constants";
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import dotenv from 'dotenv';
+import { DEFAULT_EMBEDDING_MODEL } from '../constants';
 
 dotenv.config();
 
 const embeddingsModel = new GoogleGenerativeAIEmbeddings({
-    modelName: DEFAULT_EMBEDDING_MODEL,
+  modelName: DEFAULT_EMBEDDING_MODEL,
 });
 
-/**
- * Generate a single vector representation for a query
- */
+//  *Embed a single query string
 export const embedQueryText = async (text: string): Promise<number[]> => {
-    return await embeddingsModel.embedQuery(text);
+  const cleaned = text.trim().length ? text.trim() : '[empty]';
+  return embeddingsModel.embedQuery(cleaned);
 };
 
-/**
- * Generate vectors for multiple chunk texts at once (efficient batching)
- */
+// Embed multiple document chunks
 export const embedChunkTexts = async (texts: string[]): Promise<number[][]> => {
-    return await embeddingsModel.embedDocuments(texts);
+  if (!texts.length) return [];
+
+  // Sanitize texts: Gemini embeddings fail if any text is empty or whitespace-only
+  const sanitizedTexts = texts.map((t) => {
+    const trimmed = t?.trim();
+    return trimmed && trimmed.length > 0 ? trimmed : '[empty]';
+  });
+
+  return embeddingsModel.embedDocuments(sanitizedTexts);
 };

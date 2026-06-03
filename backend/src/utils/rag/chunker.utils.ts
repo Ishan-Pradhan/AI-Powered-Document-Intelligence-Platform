@@ -1,28 +1,60 @@
-import { CHUNK_SIZE, OVERLAP, ROWS_PER_CHUNK } from "../../constants";
+import { CHUNK_SIZE, OVERLAP, ROWS_PER_CHUNK } from '../../constants';
 
-// Splitting text into arrays of strings ready to be stored in the database.
-export const splitTextIntoChunks = (text: string, isTabular = false): string[] => {
-    const chunks: string[] = [];
+/**
+ * Splits text into RAG-ready chunks
+ */
+export const splitTextIntoChunks = (
+  text: string,
+  isTabular = false,
+): string[] => {
+  if (!text || !text.trim()) return [];
 
-    if (isTabular) {
-        // Grouping spreadsheet data by rows to preserve table layout structure
-        const rows = text.split('\n').filter(line => line.trim().length > 0);
-        const rowsPerChunk = ROWS_PER_CHUNK;
+  const chunks: string[] = [];
 
-        for (let i = 0; i < rows.length; i += rowsPerChunk) {
-            chunks.push(rows.slice(i, i + rowsPerChunk).join('\n'));
-        }
-    } else {
-        // Standard sliding character window for PDF, Word, Markdown, and TXT files
-        const chunkSize = CHUNK_SIZE;
-        const overlap = OVERLAP;
-        let i = 0;
+  /**
+   * TABULAR DATA (CSV / Excel)
+   */
+  if (isTabular) {
+    const rows = text
+      .split('\n')
+      .map((r) => r.trim())
+      .filter(Boolean);
 
-        while (i < text.length) {
-            chunks.push(text.slice(i, i + chunkSize));
-            i += (chunkSize - overlap);
-        }
+    const header = rows[0]; // assume first row is header
+    const dataRows = rows.slice(1);
+
+    for (let i = 0; i < dataRows.length; i += ROWS_PER_CHUNK) {
+      const chunkRows = dataRows.slice(i, i + ROWS_PER_CHUNK);
+
+      // Repeat header for context in every chunk
+      const chunk = [header, ...chunkRows].join('\n');
+      chunks.push(chunk);
     }
 
     return chunks;
+  }
+
+  /**
+   * TEXT DATA (PDF / DOCX / TXT)
+   * Sentence-aware chunking (better than raw slicing)
+   */
+  const sentences =
+    text.replace(/\s+/g, ' ').match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
+
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    if ((currentChunk + sentence).length > CHUNK_SIZE) {
+      chunks.push(currentChunk.trim());
+      currentChunk = currentChunk.slice(-OVERLAP) + ' ' + sentence;
+    } else {
+      currentChunk += ' ' + sentence;
+    }
+  }
+
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
 };
