@@ -1,16 +1,18 @@
-import { Request, Response, NextFunction } from "express";
-import multer from "multer";
-import { ValidationError } from "sequelize";
-import { ApiError } from "../utils/ApiError";
+import { Request, Response, NextFunction } from 'express';
+import multer from 'multer';
+import { ValidationError } from 'sequelize';
+import { ApiError } from '../utils/ApiError';
+
+type AppError = ApiError | Error | multer.MulterError | ValidationError;
 
 const errorHandler = (
-  err: any,
+  err: AppError,
   _req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ) => {
   let statusCode = 500;
-  let message = "Something went wrong";
+  let message = 'Something went wrong';
   let errors: unknown[] = [];
 
   // Handle known custom error
@@ -24,7 +26,10 @@ const errorHandler = (
   else if (err instanceof ValidationError) {
     statusCode = 400;
     message = err.message;
-    errors = err.errors;
+    errors = err.errors.map((e) => ({
+      message: e.message,
+      field: e.path,
+    }));
   }
 
   // Multer error
@@ -35,17 +40,22 @@ const errorHandler = (
 
   // Generic JS error
   else if (err instanceof Error) {
-    message = err.message;
+    message =
+      process.env.NODE_ENV === 'development'
+        ? err.message
+        : 'Internal server error';
   }
 
-  console.error(`[Error] ${message}`, err);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(`[Error] ${message}`, err);
+  }
 
   return res.status(statusCode).json({
     success: false,
     message,
     data: null,
     errors,
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
 
