@@ -1,43 +1,63 @@
-import { Verification } from "../models/verification.model";
+import { Verification } from '../models/verification.model';
+import {
+  VerificationCreationAttributes,
+  VerificationInstance,
+} from '../types/verifications.types';
+
+const createToken = async (data: VerificationCreationAttributes) => {
+  return await Verification.create(data);
+};
 
 export const verificationRepository = {
-  createEmailVerification: async (userId: string, token: string, expiresAt: Date) => {
-    return await Verification.create({
+  createEmailVerification: async (
+    userId: string,
+    token: string,
+    expiresAt: Date,
+  ): Promise<VerificationInstance> => {
+    return createToken({
       userId,
       token,
-      type: "emailVerification",
+      type: 'emailVerification',
       expiresAt,
-    } as any);
+    });
   },
 
-  createPasswordResetToken: async (userId: string, token: string, expiresAt: Date) => {
-    return await Verification.create({
+  createPasswordResetToken: async (
+    userId: string,
+    token: string,
+    expiresAt: Date,
+  ): Promise<VerificationInstance> => {
+    return createToken({
       userId,
       token,
-      type: "passwordReset",
+      type: 'passwordReset',
       expiresAt,
-    } as any);
+    });
   },
 
-  findEmailVerificationByToken: async (token: string) => {
+  findEmailVerificationByToken: async (
+    token: string,
+  ): Promise<VerificationInstance | null> => {
     return await Verification.findOne({
       where: {
         token,
-        type: "emailVerification",
+        type: 'emailVerification',
       },
     });
   },
 
-  findPasswordResetByToken: async (token: string) => {
+  findPasswordResetByToken: async (
+    token: string,
+  ): Promise<VerificationInstance | null> => {
     return await Verification.findOne({
       where: {
         token,
-        type: "passwordReset",
+        type: 'passwordReset',
       },
     });
   },
 
-  deleteById: async (id: string) => {
+  deleteById: async (id: string): Promise<number> => {
     return await Verification.destroy({
       where: {
         id,
@@ -45,20 +65,20 @@ export const verificationRepository = {
     });
   },
 
-  deleteEmailVerificationsForUser: async (userId: string) => {
+  deleteEmailVerificationsForUser: async (userId: string): Promise<number> => {
     return await Verification.destroy({
       where: {
         userId,
-        type: "emailVerification",
+        type: 'emailVerification',
       },
     });
   },
 
-  deletePasswordResetTokensForUser: async (userId: string) => {
+  deletePasswordResetTokensForUser: async (userId: string): Promise<number> => {
     return await Verification.destroy({
       where: {
         userId,
-        type: "passwordReset",
+        type: 'passwordReset',
       },
     });
   },

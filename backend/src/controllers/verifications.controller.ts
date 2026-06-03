@@ -1,136 +1,118 @@
-import { baseCookieOptions } from "../config/cookie.config";
-import { userRepository } from "../repositories/users.repository";
-import { verificationRepository } from "../repositories/verification.repository";
-import { ApiError } from "../utils/ApiError";
-import { generateToken } from "../utils/security.utils";
-import { generateAccessAndRefereshTokens } from "../utils/token.utils";
-import type { Request, Response } from "express";
-import { sendVerificationEmail } from "../services/email.service";
-import { asyncHandler } from "../utils/AsyncHandler";
+import { userRepository } from '../repositories/users.repository';
+import { verificationRepository } from '../repositories/verification.repository';
+import { ApiError } from '../utils/ApiError';
+import { generateToken } from '../utils/security.utils';
+import { generateAccessAndRefereshTokens } from '../utils/token.utils';
+import type { Request, Response } from 'express';
+import { sendVerificationEmail } from '../services/email.service';
+import { asyncHandler } from '../utils/AsyncHandler';
+import { env } from '../config/env';
+import { sendAuthResponse } from '../utils/sendVerificationResponse.utils';
+import { TWENTY_FOUR_HOURS_IN_MS } from '../constants';
 
-//verify email 
-export const verifyEmail =asyncHandler( async (req: Request, res: Response): Promise<void> => {
-   
-  const token = req.query.token as string | undefined;
+// VERIFY EMAIL
+export const verifyEmail = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const token = req.query.token as string | undefined;
 
-    if (!token || typeof token !== "string") {
-      throw new ApiError(400, "Verification token is required")
+    if (!token) {
+      throw new ApiError(400, 'Verification token is required');
     }
 
-    const verification = await verificationRepository.findEmailVerificationByToken(token)
+    const verification =
+      await verificationRepository.findEmailVerificationByToken(token);
 
     if (!verification) {
-      throw new ApiError(400, "Invalid verification token")
+      throw new ApiError(400, 'Invalid verification token');
     }
 
     if (new Date(verification.expiresAt).getTime() < Date.now()) {
-      await verificationRepository.deleteById(verification.id)
-      throw new ApiError(400, "Verification token has expired")
+      await verificationRepository.deleteById(verification.id);
+      throw new ApiError(400, 'Verification token expired');
     }
 
-    const user = await userRepository.findById(verification.userId)
+    const user = await userRepository.findById(verification.userId);
+
     if (!user) {
-      await verificationRepository.deleteById(verification.id)
-      throw new ApiError(404, "User not found")
+      await verificationRepository.deleteById(verification.id);
+      throw new ApiError(404, 'User not found');
     }
 
-    const frontendUrl = process.env.FRONTEND_URL
-    const successRedirectUrl =
-      process.env.EMAIL_VERIFY_SUCCESS_REDIRECT ||
-      (frontendUrl
-        ? `${frontendUrl.replace(/\/$/, "")}/verify-success`
-        : undefined)
+    const redirectUrl = `${env.FRONTEND_URL?.replace(/\/$/, '')}/verify-success`;
 
-    if (user.isVerified) {
-      await verificationRepository.deleteEmailVerificationsForUser(user.id)
-
-      const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
-        user.id
-      )
-
-      if (successRedirectUrl) {
-        res
-          .cookie("accessToken", accessToken, baseCookieOptions)
-          .cookie("refreshToken", refreshToken, baseCookieOptions)
-          .redirect(successRedirectUrl)
-        return
-      }
-
-      res
-        .status(200)
-        .cookie("accessToken", accessToken, baseCookieOptions)
-        .cookie("refreshToken", refreshToken, baseCookieOptions)
-        .json({
-          success: true,
-          message: "Email already verified",
-        })
-      return
+    // idempotent update
+    if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
     }
 
-    user.isVerified = true
-    await user.save()
+    await verificationRepository.deleteEmailVerificationsForUser(user.id);
 
-    await verificationRepository.deleteEmailVerificationsForUser(user.id)
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+      user.id,
+    );
 
-    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user.id)
+    sendAuthResponse({
+      res,
+      accessToken,
+      refreshToken,
+      redirectUrl,
+      message: user.isVerified
+        ? 'Email verified successfully'
+        : 'Email already verified',
+    });
+  },
+);
 
-    if (successRedirectUrl) {
-      res
-        .cookie("accessToken", accessToken, baseCookieOptions)
-        .cookie("refreshToken", refreshToken, baseCookieOptions)
-        .redirect(successRedirectUrl)
-      return
+// RESEND VERIFICATION EMAIL
+export const resendVerificationEmail = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const email = (req.body as { email?: unknown })?.email;
+
+    if (!email || typeof email !== 'string') {
+      throw new ApiError(400, 'Email is required');
     }
 
-    res
-      .status(200)
-      .cookie("accessToken", accessToken, baseCookieOptions)
-      .cookie("refreshToken", refreshToken, baseCookieOptions)
-      .json({
-        success: true,
-        message: "Email verified successfully",
-      })
-    return
-  }
-)
+    const user = await userRepository.findByEmail(email);
 
-// resend verification link (for users who didn't verify the first time)
-export const resendVerificationEmail = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    const validatedBody = req.validated?.body as { email?: unknown } | undefined
-    const email = (validatedBody?.email ?? (req.body as any)?.email) as unknown
-
-    if (!email || typeof email !== "string") {
-      throw new ApiError(400, "Email is required")
-    }
-
-    const user = await userRepository.findByEmail(email)
-
-    // Always return the same response to avoid leaking whether an email exists.
     if (!user || user.isVerified) {
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        message: "If an account exists for this email, a verification link has been sent.",
-      })
+        message:
+          'If an account exists for this email, a verification link has been sent.',
+      });
+      return;
     }
 
-    const verificationToken = generateToken()
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const verificationToken = generateToken();
+    const expiresAt = new Date(Date.now() + TWENTY_FOUR_HOURS_IN_MS);
 
-    await verificationRepository.deleteEmailVerificationsForUser(user.id)
-    await verificationRepository.createEmailVerification(user.id, verificationToken, expiresAt)
+    await verificationRepository.deleteEmailVerificationsForUser(user?.id);
+    await verificationRepository.createEmailVerification(
+      user?.id,
+      verificationToken,
+      expiresAt,
+    );
 
-    let verifyLink: string | undefined
+    let verifyLink: string | undefined;
+
     try {
-      const result = await sendVerificationEmail(user.email, verificationToken)
-      verifyLink = result.verifyLink
+      const result = await sendVerificationEmail(
+        user?.email,
+        verificationToken,
+      );
+      verifyLink = result.verifyLink;
     } catch (emailError) {
-      console.error("Failed to resend verification email:", emailError)
+      console.error('Failed to resend verification email:', emailError);
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "If an account exists for this email, a verification link has been sent.",
-      ...(process.env.NODE_ENV === "development" && verifyLink ? { verifyLink } : {}),
-    })
- 
-})
+      message:
+        'If an account exists for this email, a verification link has been sent.',
+      ...(process.env.NODE_ENV === 'development' && verifyLink
+        ? { verifyLink }
+        : {}),
+    });
+  },
+);
