@@ -10,13 +10,12 @@ export interface LoginUserTypes {
 }
 
 export interface JwtPayload {
-  id: string
-  email: string
+  id: string;
+  email: string;
 }
 
-import { Request } from 'express'
+import { Request } from 'express';
 import { UserInstance } from './users.types';
 export interface AuthRequest extends Request {
-  user?: JwtPayload
-  adminUser?: UserInstance
+  user?: UserInstance;
 }

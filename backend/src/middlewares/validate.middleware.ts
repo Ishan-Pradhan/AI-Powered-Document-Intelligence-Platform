@@ -1,16 +1,18 @@
-import { ZodError, ZodType } from "zod";
-import { Request, Response, NextFunction } from "express";
+import { ZodError, ZodType } from 'zod';
+import { Request, Response, NextFunction } from 'express';
+import { ApiError } from '../utils/ApiError';
 
 type Schema = {
   body?: ZodType;
   query?: ZodType;
   params?: ZodType;
+  cookies?: ZodType;
 };
 
 export const validate = (schema: Schema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     try {
-      req.validated = {};
+      req.validated = req.validated || {};
 
       // Validate each part only if schema exists
       if (schema.body) {
@@ -29,17 +31,20 @@ export const validate = (schema: Schema) => {
         req.validated.params = parsedParams;
       }
 
+      if (schema.cookies) {
+        const parsed = schema.cookies.parse(req.cookies);
+        req.validated.cookies = parsed;
+      }
+
       return next();
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: error.issues.map((issue) => ({
-            field: issue.path.join("."),
-            message: issue.message,
-          })),
-        });
+        const formattedErrors = error.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+        }));
+
+        return next(new ApiError(400, 'Validation failed', formattedErrors));
       }
 
       return next(error);

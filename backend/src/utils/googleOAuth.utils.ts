@@ -1,17 +1,18 @@
-import { OAuth2Client } from "google-auth-library"
-import { ApiError } from "./ApiError"
+import { OAuth2Client } from 'google-auth-library';
+import { ApiError } from './ApiError';
+import { env } from '../config/env';
 
 export const getGoogleOAuthClient = () => {
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-  const redirectUri = process.env.GOOGLE_CALLBACK_URL
+  const clientId = env.GOOGLE_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = env.GOOGLE_CALLBACK_URL;
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new ApiError(
       500,
-      "Missing Google OAuth env vars (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL)"
-    )
+      'Missing Google OAuth env vars (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL)',
+    );
   }
 
-  return new OAuth2Client(clientId, clientSecret, redirectUri)
-}
+  return new OAuth2Client(clientId, clientSecret, redirectUri);
+};
