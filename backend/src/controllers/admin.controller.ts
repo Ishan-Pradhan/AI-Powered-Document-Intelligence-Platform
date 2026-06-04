@@ -42,6 +42,24 @@ export const getAllUsers = asyncHandler(
   },
 );
 
+//   GET USER STATS (ADMIN ONLY)
+export const getUserStats = asyncHandler(
+  async (_req: AuthRequest, res: Response) => {
+    const { totalUsers, blockedCount, adminsCount } =
+      await userRepository.getUsersStats();
+
+    return ok(
+      res,
+      {
+        totalUsers: totalUsers,
+        blockedUsers: blockedCount,
+        adminUsers: adminsCount,
+      },
+      'User stats retrieved successfully',
+    );
+  },
+);
+
 // BLOCK / UNBLOCK USER
 export const blockAndUnblockUser = asyncHandler(
   async (req: AuthRequest, res: Response) => {
