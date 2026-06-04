@@ -10,10 +10,10 @@ import IsLoggedIn from "./privateRoutes/isLoggedIn";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ChatLayout from "@/pages/Chat/ChatLayout";
 import ChatPage from "@/pages/Chat/ChatPage";
-import  KnowledgeBasePage from "@/pages/KnowledgeBase/KnowledgeBasePage";
+import KnowledgeBasePage from "@/pages/KnowledgeBase/KnowledgeBasePage";
 import AdminPage from "@/pages/Admin/AdminPage";
 import UserSettingsPage from "@/pages/Users/UserSettingsPage";
-
+import WidgetChatPage from "@/pages/Chat/WidgetChatPage";
 
 export const router = createBrowserRouter([
   {
@@ -69,15 +69,15 @@ export const router = createBrowserRouter([
           },
           {
             path: "/knowledge-base",
-            element: <KnowledgeBasePage/>,
+            element: <KnowledgeBasePage />,
           },
           {
             path: "/admin",
-                element: <AdminPage/>,
+            element: <AdminPage />,
           },
           {
             path: "/settings",
-            element: <UserSettingsPage/>,
+            element: <UserSettingsPage />,
           },
         ],
       },
@@ -85,8 +85,12 @@ export const router = createBrowserRouter([
   },
 
   {
+    path: "/widget/chat",
+    element: <WidgetChatPage />,
+  },
+
+  {
     path: "*",
     element: <NotFoundPage />,
   },
 ]);
-
