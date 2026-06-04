@@ -178,7 +178,7 @@ export const logoutUser = asyncHandler(
           process.env.ACCESS_TOKEN_SECRET as string,
         ) as { id: string };
 
-        const user = await userRepository.findById(decoded.id);
+        const user = await userRepository.findByIdWithSecrets(decoded.id);
 
         if (user) {
           user.refreshToken = null;
@@ -216,7 +216,7 @@ export const refreshAccessToken = asyncHandler(
       throw new ApiError(401, 'Unauthorized: Invalid refresh token');
     }
 
-    const user = await userRepository.findById(decoded.id);
+    const user = await userRepository.findByIdWithSecrets(decoded.id);
 
     if (!user || user.refreshToken !== refreshToken) {
       throw new ApiError(401, 'Unauthorized: Invalid refresh token');
@@ -285,7 +285,7 @@ export const forgotPassword = asyncHandler(
     const user = await userRepository.findByEmail(email);
 
     if (!user || user.authProvider === 'google') {
-      return ok(res, null, 'If email exists, reset sent');
+      return ok(res, null, 'If the account exists, a reset link was sent.');
     }
 
     const resetToken = generateToken();

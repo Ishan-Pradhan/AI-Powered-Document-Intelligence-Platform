@@ -58,6 +58,10 @@ export const userRepository = {
     return await User.findByPk(id);
   },
 
+  findByIdWithSecrets: async (id: string) => {
+    return await User.unscoped().findByPk(id);
+  },
+
   findByEmail: async (email: string) => {
     return await User.findOne({ where: { email } });
   },
@@ -69,5 +73,17 @@ export const userRepository = {
 
   create: async (userData: UserCreationAttributes): Promise<UserInstance> => {
     return await User.create(userData);
+  },
+
+  getUsersStats: async () => {
+    const totalUsers = await User.count();
+    const blockedCount = await User.count({ where: { isBlocked: true } });
+    const adminsCount = await User.count({ where: { role: 'admin' } });
+
+    return {
+      totalUsers,
+      blockedCount,
+      adminsCount,
+    };
   },
 };
