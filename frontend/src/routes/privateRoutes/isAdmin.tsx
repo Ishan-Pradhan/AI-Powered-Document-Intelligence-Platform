@@ -39,9 +39,12 @@ function RequireAdmin() {
 				)
 				if (cancelled) return
 				setUser(response.data.data)
-			} catch {
+			} catch (error: any) {
 				if (cancelled) return
-				clearUser()
+				const status = error?.response?.status
+				if (status === 401 || status === 403) {
+					clearUser()
+				}
 			} finally {
 				if (!cancelled) setIsChecking(false)
 			}

@@ -36,10 +36,21 @@ function IsLoggedIn() {
 				if (cancelled) return
 				setUser(response.data.data)
 				setIsAuthenticated(true)
-			} catch {
+			} catch (error: any) {
 				if (cancelled) return
-				clearUser()
-				setIsAuthenticated(false)
+				const status = error?.response?.status
+				if (status === 401 || status === 403) {
+					clearUser()
+					setIsAuthenticated(false)
+				} else {
+					// If the error is network, 500, or 429 (rate-limit), trust local session if it exists
+					const localUser = useAuthStore.getState().user
+					if (localUser) {
+						setIsAuthenticated(true)
+					} else {
+						setIsAuthenticated(false)
+					}
+				}
 			} finally {
 				if (!cancelled) setIsChecking(false)
 			}
