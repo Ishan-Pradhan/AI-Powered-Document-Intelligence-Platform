@@ -1,79 +1,79 @@
-import type { AxiosError } from "axios"
-import { KeyRound } from "lucide-react"
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import type { AxiosError } from "axios";
+import { KeyRound } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
-import { forgotPassword } from "@/api/auth"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { forgotPassword } from "@/api/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ForgotPasswordPage() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setMessage(null)
-    setError(null)
+    event.preventDefault();
 
-    const trimmedEmail = email.trim()
+    setMessage(null);
+    setError(null);
+
+    const trimmedEmail = email.trim();
+
     if (!trimmedEmail) {
-      setError("Please enter your email address.")
-      return
+      setError("Please enter your email address.");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
+
     try {
-      const response = await forgotPassword(trimmedEmail)
-      setMessage(response.data.message || "If the account exists, a reset link was sent.")
-      window.setTimeout(() => {
-        navigate("/login")
-      }, 1500)
-    } catch (requestError) {
-      const err = requestError as AxiosError<{ message?: string }>
-      setError(err.response?.data?.message || "Unable to send reset email.")
+      const response = await forgotPassword(trimmedEmail);
+
+      setMessage(
+        response.data.message ||
+          "If the account exists, a reset link was sent.",
+      );
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+
+      setError(error.response?.data?.message || "Unable to send reset email.");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="w-full max-w-sm">
-      {/* icon */}
       <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-secondary-500/10">
-        <KeyRound className="size-5 text-secondary-500" strokeWidth={1.75} />
+        <KeyRound className="size-5 text-secondary-500" />
       </div>
 
-      {/* heading */}
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-foreground">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight">
         Forgot your password?
       </h1>
+
       <p className="mb-8 text-sm text-muted-foreground">
-        No worries. Enter your email and we&apos;ll send you a reset link.
+        No worries. Enter your email and we’ll send you a reset link.
       </p>
 
-      {/* form */}
       <form onSubmit={handleSubmit} className="grid gap-4">
         <div className="grid gap-1.5">
-          <Label htmlFor="forgotEmail" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Email address
-          </Label>
+          <Label htmlFor="forgotEmail">Email address</Label>
+
           <Input
             id="forgotEmail"
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             className="h-10 bg-muted/40"
           />
         </div>
 
         <button
-          id="forgot-password-submit"
           type="submit"
           disabled={isSubmitting}
           className="flex h-10 w-full items-center justify-center rounded-md bg-primary-500 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
@@ -81,17 +81,17 @@ export default function ForgotPasswordPage() {
           {isSubmitting ? "Sending…" : "Send reset link"}
         </button>
 
-        {error ? (
-          <div className="rounded-lg border border-destructive/25 bg-destructive/8 px-3 py-2.5 text-sm text-destructive">
+        {error && (
+          <div className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
           </div>
-        ) : null}
+        )}
 
-        {message ? (
-          <div className="rounded-lg border border-primary-500/25 bg-primary-500/8 px-3 py-2.5 text-sm text-primary-600">
+        {message && (
+          <div className="rounded-lg border border-primary-500/25 bg-primary-500/10 px-3 py-2 text-sm text-primary-600">
             {message}
           </div>
-        ) : null}
+        )}
 
         <p className="text-center text-sm text-muted-foreground">
           Remembered it?{" "}
@@ -104,5 +104,5 @@ export default function ForgotPasswordPage() {
         </p>
       </form>
     </div>
-  )
+  );
 }
