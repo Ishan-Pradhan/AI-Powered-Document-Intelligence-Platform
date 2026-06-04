@@ -47,7 +47,11 @@ const errorHandler = (
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    console.error(`[Error] ${message}`, err);
+    if (statusCode === 401) {
+      console.warn(`[Auth Warning] ${message}`);
+    } else {
+      console.error(`[Error] ${message}`, err);
+    }
   }
 
   return res.status(statusCode).json({
