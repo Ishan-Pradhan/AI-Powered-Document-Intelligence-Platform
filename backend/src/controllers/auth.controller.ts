@@ -255,7 +255,7 @@ export const changePassword = asyncHandler(
       throw new ApiError(400, 'Current password and new password are required');
     }
 
-    const user = await userRepository.findById(userId);
+    const user = await userRepository.findByIdWithSecrets(userId);
 
     if (!user) {
       throw new ApiError(404, 'User not found');
