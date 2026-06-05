@@ -3,7 +3,11 @@ import { chunksRepository } from '../../../repositories/chunks.repository';
 import { embedQueryText } from '../../../services/embedding.service';
 
 export const retrieveContext = async (message: string, documentId?: string) => {
-  let matchedChunks = [];
+  type MatchedChunk =
+    | Awaited<ReturnType<typeof chunksRepository.searchSemantic>>[number]
+    | Awaited<ReturnType<typeof chunksRepository.findChunksByDocumentId>>[number];
+
+  let matchedChunks: MatchedChunk[] = [];
 
   try {
     const queryVector = await embedQueryText(message);
@@ -27,7 +31,7 @@ export const retrieveContext = async (message: string, documentId?: string) => {
     );
   }
 
-  const context = matchedChunks.map((c: any) => c.text).join('\n\n---\n\n');
+  const context = matchedChunks.map((c) => (c as { text: string }).text).join('\n\n---\n\n');
 
   return { matchedChunks, context };
 };

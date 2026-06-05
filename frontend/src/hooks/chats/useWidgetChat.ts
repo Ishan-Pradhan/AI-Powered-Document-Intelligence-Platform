@@ -19,7 +19,7 @@ interface UseWidgetChatProps {
 }
 
 // Module-level cache to deduplicate concurrent guest logins (e.g., React StrictMode double mounts)
-let globalGuestAuthPromise: Promise<any> | null = null;
+let globalGuestAuthPromise: ReturnType<typeof guestLogin> | null = null;
 
 export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
   const [authLoading, setAuthLoading] = useState(true);
@@ -60,7 +60,7 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
             setAuthLoading(false);
             return;
           }
-          
+
           if (!globalGuestAuthPromise) {
             globalGuestAuthPromise = guestLogin(storedGuestId)
               .then((res) => {
@@ -76,7 +76,7 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
                 throw err;
               });
           }
-          
+
           const res = await globalGuestAuthPromise;
           activeUser = res.data.data;
         }
@@ -99,7 +99,7 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
           }
         }
         setAuthError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (cancelled) return;
         console.error("Widget authentication failed:", err);
         setAuthError("Failed to initialize widget session.");

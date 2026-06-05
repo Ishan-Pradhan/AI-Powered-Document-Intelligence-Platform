@@ -1,6 +1,6 @@
 class ApiError extends Error {
   statusCode: number
-  data: any
+  data: null
   success: boolean
   errors: unknown[]
 

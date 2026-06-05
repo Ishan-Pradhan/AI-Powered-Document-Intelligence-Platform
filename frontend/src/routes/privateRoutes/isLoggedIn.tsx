@@ -1,4 +1,5 @@
 import { api } from "@/api/client"
+import { isAxiosError } from "axios"
 import { useAuthStore } from "@/store/auth.store"
 import { useEffect, useState } from "react"
 import { Navigate, Outlet, useLocation } from "react-router-dom"
@@ -36,9 +37,9 @@ function IsLoggedIn() {
 				if (cancelled) return
 				setUser(response.data.data)
 				setIsAuthenticated(true)
-			} catch (error: any) {
+			} catch (error: unknown) {
 				if (cancelled) return
-				const status = error?.response?.status
+				const status = isAxiosError(error) ? error.response?.status : undefined
 				if (status === 401 || status === 403) {
 					clearUser()
 					setIsAuthenticated(false)

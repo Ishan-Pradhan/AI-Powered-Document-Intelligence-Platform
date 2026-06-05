@@ -128,7 +128,7 @@ export const parseDocumentBuffer = async (
    */
   if (
     mimeType ===
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
     mimeType === 'application/vnd.ms-excel'
   ) {
     return parseSpreadsheet(fileBuffer);
