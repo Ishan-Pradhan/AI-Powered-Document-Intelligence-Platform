@@ -24,6 +24,8 @@ import {
   changePassword,
 } from '../controllers/auth.controller';
 import {
+  githubAuthCallback,
+  githubAuthRedirect,
   googleAuthCallback,
   googleAuthRedirect,
 } from '../controllers/oauth.controller';
@@ -60,9 +62,13 @@ router
 
 router.route('/google').get(googleAuthRedirect);
 router.route('/google/callback').get(googleAuthCallback);
+router.route('/github').get(githubAuthRedirect);
+router.route('/github/callback').get(githubAuthCallback);
 
 // Aliases (in case Google Console redirect URI uses /oauth/google/*)
 router.route('/oauth/google').get(googleAuthRedirect);
 router.route('/oauth/google/callback').get(googleAuthCallback);
+router.route('/oauth/github').get(githubAuthRedirect);
+router.route('/oauth/github/callback').get(githubAuthCallback);
 
 export default router;

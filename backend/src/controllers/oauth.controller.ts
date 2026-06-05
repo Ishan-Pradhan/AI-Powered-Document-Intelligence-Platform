@@ -13,6 +13,11 @@ import {
 } from '../config/cookie.config';
 import { asyncHandler } from '../utils/AsyncHandler';
 import { env } from '../config/env';
+import {
+  exchangeGithubCode,
+  fetchGithubUser,
+  fetchGithubPrimaryEmail,
+} from '../utils/githubOAuth.utils';
 
 type GoogleProfile = {
   email?: string;
@@ -50,6 +55,130 @@ export const googleAuthRedirect = async (_req: Request, res: Response) => {
   );
 };
 
+export const githubAuthRedirect = async (
+  _req: Request,
+  res: Response,
+) => {
+  const state = crypto.randomBytes(16).toString("hex");
+
+  res.cookie("github_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 5 * 60 * 1000,
+  });
+
+  const params = new URLSearchParams({
+    client_id: env.GITHUB_CLIENT_ID,
+    redirect_uri: env.GITHUB_CALLBACK_URL,
+    scope: "user:email",
+    state,
+  });
+
+  return res.redirect(
+    `https://github.com/login/oauth/authorize?${params.toString()}`
+  );
+};
+
+export const githubAuthCallback = asyncHandler(async (req: Request, res: Response) => {
+  const { code, state } = req.query;
+  const cookieState = req.cookies?.github_oauth_state;
+
+  if (!code || typeof code !== 'string') {
+    throw new ApiError(400, 'Missing OAuth code');
+  }
+
+  if (!state || state !== cookieState) {
+    throw new ApiError(400, 'Invalid OAuth state');
+  }
+
+  res.clearCookie('github_oauth_state', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+
+  // Exchange code for access token using GitHub's REST API
+  const { access_token } = await exchangeGithubCode(code);
+
+  // Fetch user profile — parsed once, no double-consume
+  const githubUser = await fetchGithubUser(access_token);
+
+  // GitHub may return null email if the user has set it to private
+  const email =
+    githubUser.email ?? (await fetchGithubPrimaryEmail(access_token));
+
+  if (!email) {
+    throw new ApiError(
+      400,
+      'Your GitHub account has no public or verified email. Please add one in your GitHub settings.',
+    );
+  }
+
+  let user = await userRepository.findByEmail(email);
+
+  if (!user) {
+    const userCount = await userRepository.count();
+    const role = userCount === 0 ? 'admin' : 'user';
+
+    const randomPassword = generateToken();
+    const hashedPassword = await hashPassword(randomPassword);
+
+    user = await userRepository.create({
+      name: githubUser.name || githubUser.login || 'User',
+      email,
+      password: hashedPassword,
+      isVerified: true,
+      authProvider: 'github',
+      avatarUrl: githubUser.avatar_url,
+      role,
+    });
+  } else {
+    let updated = false;
+
+    if (!user.avatarUrl) {
+      user.avatarUrl = getGravatar(user.email);
+      updated = true;
+    }
+
+    if (!user.isVerified) {
+      user.isVerified = true;
+      updated = true;
+    }
+
+    if (updated) await user.save();
+  }
+
+  if (user.isBlocked) {
+    const errorRedirectUrl = `${env.FRONTEND_URL || 'http://localhost:3000'}/login?error=${encodeURIComponent('Your account has been blocked')}`;
+    return res.redirect(errorRedirectUrl);
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user.id);
+
+  const redirectUrl = env.FRONTEND_URL;
+
+  if (redirectUrl) {
+    return res
+      .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
+      .cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions())
+      .redirect(redirectUrl);
+  } else {
+    return res.json({
+      message: 'Successfully logged in',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      },
+      accessToken,
+      refreshToken,
+    });
+  }
+})
+
 export const googleAuthCallback = asyncHandler(
   async (req: Request, res: Response) => {
     const code = req.query.code;
@@ -74,7 +203,7 @@ export const googleAuthCallback = asyncHandler(
     const { tokens } = await oauthClient.getToken(code);
 
     if (!tokens.id_token) {
-      throw new ApiError(400, 'Google did not return an id_token');
+      throw new ApiError(400, 'github did not return an id_token');
     }
 
     const ticket = await oauthClient.verifyIdToken({
@@ -139,7 +268,7 @@ export const googleAuthCallback = asyncHandler(
     );
 
     const redirectUrl = env.FRONTEND_URL;
-    
+
     if (redirectUrl) {
       return res
         .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
@@ -154,3 +283,5 @@ export const googleAuthCallback = asyncHandler(
       .json({ success: true, message: 'Google login successful' });
   },
 );
+
+
