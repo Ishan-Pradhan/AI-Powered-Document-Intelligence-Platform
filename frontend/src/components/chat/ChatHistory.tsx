@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Edit, EllipsisVertical, MessageCircle, Trash } from "lucide-react";
+import { Edit, EllipsisVertical, MessageCircle, Trash, Trash2Icon } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import { Button } from "../ui/button";
 
 import { toast } from "sonner";
 import { useChatHistory } from "@/hooks/chats/useChatHistory";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
 
 type Chat = {
   id: string;
@@ -33,7 +34,6 @@ function ChatHistory({ collapsed }: { collapsed: boolean }) {
     deleteMutation,
   } = useChatHistory();
 
-  // UI state only
   const [editingChat, setEditingChat] = useState<Chat | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
@@ -112,15 +112,46 @@ function ChatHistory({ collapsed }: { collapsed: boolean }) {
                     </DropdownMenuItem>
 
                     {/* Delete */}
-                    <DropdownMenuItem
+
+                     <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                       <DropdownMenuItem onSelect={(e)=>e.preventDefault()}
                       className="cursor-pointer flex gap-4 items-center"
-                      onClick={() => deleteMutation.mutate(chat.id)}
                     >
                       <Trash className=" text-destructive size-3.5 shrink-0" />
                       <span className="text-destructive">
                         Delete Conversation
                       </span>
                     </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent size="sm">
+                        <AlertDialogHeader>
+                          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+                            <Trash2Icon />
+                          </AlertDialogMedia>
+                          <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete this Conversation and all its
+                            associated messages. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel
+                            variant="outline"
+                            className="text-black"
+                          >
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                      onClick={() => deleteMutation.mutate(chat.id)}
+                            variant="destructive"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
