@@ -3,9 +3,12 @@ import { sequelize } from './config/db';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import { limiter } from './middlewares/rateLimiter.middleware';
 import { errorHandler } from './middlewares/error.middleware';
+import { swaggerSpec } from './config/swagger.config';
 import './models';
+import { startCleanupJob } from './jobs/cleanupGuestUsers';
 
 dotenv.config();
 
@@ -30,7 +33,25 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1", healthRoutes);
 
+// ── Swagger UI ──────────────────────────────────────────────────────────────
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'DocIntelAI API Docs',
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: {
+      persistAuthorization: true,
+      withCredentials: true,
+    },
+  }),
+);
 
+// Serve the raw OpenAPI JSON so clients can import it into Postman / Insomnia
+app.get('/api/docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 app.get("/", (_req: Request, res: Response) => {
   res.status(200).send("<h1>Hello World</h1>")
@@ -48,6 +69,7 @@ export const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log("Database connected successfully");
+    startCleanupJob();
   } catch (error) {
     console.error("DB connection failed:", error);
     process.exit(1);
