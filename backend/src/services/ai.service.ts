@@ -82,7 +82,7 @@ export const generateAnswer = async (
 ): Promise<string> => {
   // 1. guard empty context
   if (!context || context.trim().length === 0) {
-    return "I couldn't find relevant information in the uploaded documents.";
+    return "I don't have that information in my current knowledge base.";
   }
 
   // 2. Sanitize context (PII protection)

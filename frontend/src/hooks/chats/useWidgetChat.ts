@@ -27,6 +27,10 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
 
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const clearUser = useAuthStore((state) => state.clearUser);
+
+  // Tracks whether the backend has confirmed a valid session this lifecycle
+  const sessionReady = useRef(false);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [activeChatId, setActiveChatId] = useState<string | undefined>(undefined);
@@ -56,35 +60,45 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
         } else {
           const storedGuestId = localStorage.getItem("docintel_guest_user_id");
           if (!storedGuestId) {
-            // Lazy initialization: Defer guest login until the first message is sent
+            // No stored session — clear stale Zustand state and defer guest login
+            // until the user sends their first message.
+            clearUser();
             setAuthLoading(false);
             return;
           }
 
-          if (!globalGuestAuthPromise) {
-            globalGuestAuthPromise = guestLogin(storedGuestId)
-              .then((res) => {
-                const user = res.data.data;
-                if (user) {
-                  localStorage.setItem("docintel_guest_user_id", user.id);
-                }
-                globalGuestAuthPromise = null;
-                return res;
-              })
-              .catch((err) => {
-                globalGuestAuthPromise = null;
-                throw err;
-              });
-          }
+          try {
+            if (!globalGuestAuthPromise) {
+              globalGuestAuthPromise = guestLogin(storedGuestId)
+                .then((res) => {
+                  const user = res.data.data;
+                  if (user) {
+                    localStorage.setItem("docintel_guest_user_id", user.id);
+                  }
+                  globalGuestAuthPromise = null;
+                  return res;
+                })
+                .catch((err) => {
+                  globalGuestAuthPromise = null;
+                  localStorage.removeItem("docintel_guest_user_id");
+                  throw err;
+                });
+            }
 
-          const res = await globalGuestAuthPromise;
-          activeUser = res.data.data;
+            const res = await globalGuestAuthPromise;
+            activeUser = res.data.data;
+          } catch (loginErr) {
+            console.warn("Stored guest session expired or deleted, reverting to anonymous state:", loginErr);
+            setAuthLoading(false);
+            return;
+          }
         }
 
         if (cancelled) return;
 
         if (activeUser) {
           setUser(activeUser);
+          sessionReady.current = true;
 
           const chatsList = await getChats();
           if (cancelled) return;
@@ -127,14 +141,15 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
     const message = draft.trim();
     if (!message || sendMessageMutation.isPending) return;
 
-    // Lazily log in the guest user if no session exists yet
-    if (!user) {
+    // Lazily log in the guest user if no server-confirmed session exists yet
+    if (!sessionReady.current) {
       try {
         const res = await guestLogin();
         const activeUser = res.data.data;
         if (activeUser) {
           localStorage.setItem("docintel_guest_user_id", activeUser.id);
           setUser(activeUser);
+          sessionReady.current = true;
         }
       } catch (err) {
         console.error("Lazy guest login failed:", err);
@@ -186,7 +201,63 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
           )
           .concat(assistantMessage),
       );
-    } catch (error) {
+    } catch (error: unknown) {
+      // If the backend rejected the request because the guest session was
+      // deleted (401), transparently create a new guest and retry the message.
+      const status =
+        (error as { response?: { status?: number } })?.response?.status;
+
+      if (status === 401) {
+        console.warn("Guest session expired mid-session, creating a new guest and retrying...");
+        try {
+          sessionReady.current = false;
+          localStorage.removeItem("docintel_guest_user_id");
+          clearUser();
+          setActiveChatId(undefined);
+
+          const res = await guestLogin();
+          const activeUser = res.data.data;
+          if (activeUser) {
+            localStorage.setItem("docintel_guest_user_id", activeUser.id);
+            setUser(activeUser);
+            sessionReady.current = true;
+          }
+
+          const retryResponse = await sendMessageMutation.mutateAsync({
+            message,
+            chatId: undefined,
+            documentId,
+          });
+
+          if (retryResponse.chatId) {
+            setActiveChatId(retryResponse.chatId);
+          }
+
+          const retryAssistantMessage: UiMessage = {
+            id: `assistant-${Date.now()}`,
+            chatId: retryResponse.chatId,
+            role: "assistant",
+            content: retryResponse.answer,
+            sourcesUsed: retryResponse.sourcesUsed,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          setMessages((prev) =>
+            prev
+              .map((item) =>
+                item.id === optimisticUserMessage.id
+                  ? { ...item, chatId: retryResponse.chatId, optimistic: false }
+                  : item,
+              )
+              .concat(retryAssistantMessage),
+          );
+          return;
+        } catch (retryErr) {
+          console.error("Retry after session reset failed:", retryErr);
+        }
+      }
+
       console.error("Failed to send message:", error);
       setMessages((prev) =>
         prev.filter((item) => item.id !== optimisticUserMessage.id),

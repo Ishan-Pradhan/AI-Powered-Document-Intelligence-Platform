@@ -53,6 +53,6 @@ export const changePasswordSchema = {
 
 export const refreshAccessTokenSchema = {
   cookies: z.object({
-    refreshToken: z.string().min(1, 'Refresh token is required'),
+    refreshToken: z.string().optional(),
   }),
 };

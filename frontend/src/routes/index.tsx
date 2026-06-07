@@ -1,48 +1,46 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
+
+// Eagerly loaded (auth + layout shells — small, needed immediately)
 import AuthLayout from "../pages/Auth/AuthLayout";
-import LoginPage from "../pages/Auth/LoginPage";
-import RegisterPage from "@/pages/Auth/RegisterPage";
-import EmailVerificationPage from "@/pages/Auth/EmailVerificationPage";
-import VerificationSuccessPage from "@/pages/Auth/VerificationSuccessPage";
-import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
-import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
 import IsLoggedIn from "./privateRoutes/isLoggedIn";
-import NotFoundPage from "@/pages/NotFoundPage";
-import ChatLayout from "@/pages/Chat/ChatLayout";
-import ChatPage from "@/pages/Chat/ChatPage";
-import KnowledgeBasePage from "@/pages/KnowledgeBase/KnowledgeBasePage";
-import AdminPage from "@/pages/Admin/AdminPage";
-import UserSettingsPage from "@/pages/Users/UserSettingsPage";
-import WidgetChatPage from "@/pages/Chat/WidgetChatPage";
+import Loading from "@/components/loading/Loading";
+
+// Lazy-loaded pages
+const LoginPage = lazy(() => import("../pages/Auth/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/Auth/RegisterPage"));
+const EmailVerificationPage = lazy(() => import("@/pages/Auth/EmailVerificationPage"));
+const VerificationSuccessPage = lazy(() => import("@/pages/Auth/VerificationSuccessPage"));
+const ForgotPasswordPage = lazy(() => import("../pages/Auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("../pages/Auth/ResetPasswordPage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+const ChatLayout = lazy(() => import("@/pages/Chat/ChatLayout"));
+const ChatPage = lazy(() => import("@/pages/Chat/ChatPage"));
+const KnowledgeBasePage = lazy(() => import("@/pages/KnowledgeBase/KnowledgeBasePage"));
+const AdminPage = lazy(() => import("@/pages/Admin/AdminPage"));
+const UserSettingsPage = lazy(() => import("@/pages/Users/UserSettingsPage"));
+const WidgetChatPage = lazy(() => import("@/pages/Chat/WidgetChatPage"));
+
+const PageLoader = () => (
+  <div className="h-lvh">
+    <Loading />
+  </div>
+);
+
+const withSuspense = (element: React.ReactNode) => (
+  <Suspense fallback={<PageLoader />}>{element}</Suspense>
+);
 
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      {
-        path: "/login",
-        element: <LoginPage />,
-      },
-      {
-        path: "/register",
-        element: <RegisterPage />,
-      },
-      {
-        path: "/verify-email",
-        element: <EmailVerificationPage />,
-      },
-      {
-        path: "/verify-success",
-        element: <VerificationSuccessPage />,
-      },
-      {
-        path: "/forgot-password",
-        element: <ForgotPasswordPage />,
-      },
-      {
-        path: "/reset-password",
-        element: <ResetPasswordPage />,
-      },
+      { path: "/login", element: withSuspense(<LoginPage />) },
+      { path: "/register", element: withSuspense(<RegisterPage />) },
+      { path: "/verify-email", element: withSuspense(<EmailVerificationPage />) },
+      { path: "/verify-success", element: withSuspense(<VerificationSuccessPage />) },
+      { path: "/forgot-password", element: withSuspense(<ForgotPasswordPage />) },
+      { path: "/reset-password", element: withSuspense(<ResetPasswordPage />) },
     ],
   },
   {
@@ -53,44 +51,24 @@ export const router = createBrowserRouter([
         element: <Navigate to="/chat" replace />,
       },
       {
-        element: <ChatLayout />,
+        element: withSuspense(<ChatLayout />),
         children: [
-          {
-            path: "/chat",
-            element: <ChatPage />,
-          },
-          {
-            path: "/chat/new",
-            element: <ChatPage />,
-          },
-          {
-            path: "/chat/:chatId",
-            element: <ChatPage />,
-          },
-          {
-            path: "/knowledge-base",
-            element: <KnowledgeBasePage />,
-          },
-          {
-            path: "/admin",
-            element: <AdminPage />,
-          },
-          {
-            path: "/settings",
-            element: <UserSettingsPage />,
-          },
+          { path: "/chat", element: withSuspense(<ChatPage />) },
+          { path: "/chat/new", element: withSuspense(<ChatPage />) },
+          { path: "/chat/:chatId", element: withSuspense(<ChatPage />) },
+          { path: "/knowledge-base", element: withSuspense(<KnowledgeBasePage />) },
+          { path: "/admin", element: withSuspense(<AdminPage />) },
+          { path: "/settings", element: withSuspense(<UserSettingsPage />) },
         ],
       },
     ],
   },
-
   {
     path: "/widget/chat",
-    element: <WidgetChatPage />,
+    element: withSuspense(<WidgetChatPage />),
   },
-
   {
     path: "*",
-    element: <NotFoundPage />,
+    element: withSuspense(<NotFoundPage />),
   },
 ]);

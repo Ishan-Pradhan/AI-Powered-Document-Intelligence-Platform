@@ -9,8 +9,6 @@ export function EmptyState({ isNewChat, onSelectPrompt }: EmptyStateProps) {
   const suggestedPrompts = [
     "Summarize the uploaded document in plain language.",
     "Find the most important points and missing details.",
-    "Explain this content like I’m new to the topic.",
-    "List the key action items and risks.",
   ];
 
   return (

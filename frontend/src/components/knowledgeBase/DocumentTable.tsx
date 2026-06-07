@@ -1,4 +1,5 @@
-import { FileText, Search, Trash2, Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import { FileText, Search, Trash2, Trash2Icon, Copy, Check } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,16 @@ export function DocumentTable({
   totalPages,
   totalItems,
 }: DocumentTableProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
+
   return (
     <>
       {/* list header */}
@@ -95,6 +106,17 @@ export function DocumentTable({
                     {formatDate(source.updatedAt)}
                   </td>
                   <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => handleCopyId(source.id)}
+                      className="p-1 rounded w-auto flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      title="Copy Document ID"
+                    >
+                      {copiedId === source.id ? (
+                        <Check className="size-4 text-green-500" />
+                      ) : (
+                        <Copy className="size-4" />
+                      )}
+                    </button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <div className="p-1 rounded w-auto flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">

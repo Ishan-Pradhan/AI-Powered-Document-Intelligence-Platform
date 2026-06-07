@@ -7,10 +7,10 @@ export function WidgetEmptyState() {
         <MessageSquarePlus className="size-5.5" />
       </div>
       <h2 className="mt-3.5 text-xs font-medium text-foreground">
-        Document Assistant
+        Ask AI 
       </h2>
       <p className="mt-1.5 max-w-[240px] text-[11px] text-muted-foreground/85 leading-relaxed">
-        Ask questions, seek clarification, or request summaries about this document.
+        Ask questions, seek clarification, or request summaries.
       </p>
     </div>
   );

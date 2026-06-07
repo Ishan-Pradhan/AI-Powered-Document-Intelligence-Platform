@@ -4,6 +4,7 @@ import UploadDocumentModal from "@/components/knowledgeBase/UploadDocumentModal"
 import { SyncSummaryCards } from "@/components/knowledgeBase/SyncSummaryCards";
 import { DocumentTable } from "@/components/knowledgeBase/DocumentTable";
 import { useKnowledgeBase } from "@/hooks/knowledgeBase/useKnowledgeBase";
+import { KnowledgeBaseSkeleton } from "@/components/knowledgeBase/KnowledgeBaseSkeleton";
 
 export default function KnowledgeBasePage() {
   const {
@@ -22,13 +23,7 @@ export default function KnowledgeBasePage() {
   } = useKnowledgeBase();
 
   if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background text-foreground p-8">
-        <p className="text-sm text-muted-foreground animate-pulse">
-          Loading sources...
-        </p>
-      </div>
-    );
+    return <KnowledgeBaseSkeleton />;
   }
 
   if (sources.length === 0 && !searchQuery) {

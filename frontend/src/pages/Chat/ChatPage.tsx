@@ -4,6 +4,7 @@ import { useChatSession } from "@/hooks/chats/useChatSession";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { EmptyState } from "@/components/chat/EmptyState";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { MessageSkeleton } from "@/components/chat/MessageSkeleton";
 
 export default function ChatPage() {
   const { chatId } = useParams();
@@ -41,10 +42,7 @@ export default function ChatPage() {
           )}
 
           {isLoading && messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8">
-              <LoaderCircle className="size-6 animate-spin text-primary-500" />
-              <p className="text-xs text-muted-foreground mt-2">Loading messages...</p>
-            </div>
+           <MessageSkeleton/>
           ) : messages.length === 0 ? (
             <EmptyState isNewChat={isNewChat} onSelectPrompt={setDraft} />
           ) : (
