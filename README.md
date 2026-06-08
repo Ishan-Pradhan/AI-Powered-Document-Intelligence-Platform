@@ -13,7 +13,7 @@ An advanced, full-stack enterprise-grade Document Intelligence and RAG (Retrieva
 
 ### Conversational RAG Engine
 - **AI Chat Room**: Interactive interface for discussing documents, generating summaries, and querying complex data tables.
-- **Provider Support**: Seamlessly switch or fall back between Google Gemini (`@langchain/google-genai`) and Groq (`@langchain/groq` using Llama 3 models).
+- **Provider Support**: Groq (`@langchain/groq` using Llama 3 models) for LLM and Gemini-Embedding-2 as embedding model.
 - **PII Protection**: Automatically redacts sensitive information (like emails, phone numbers, SSNs) before sending context to LLMs.
 
 ### Extensible Floating Chat Widget
