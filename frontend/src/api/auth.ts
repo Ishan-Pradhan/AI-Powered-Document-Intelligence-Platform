@@ -47,8 +47,8 @@ export const resetPassword = (payload: {
 export const oauthUrl = (provider: "google" | "github") =>
   buildApiUrl(`/api/v1/auth/${provider}`);
 
-export const guestLogin = (guestUserId?: string) =>
-  api.post<ApiResponse<AuthUserDto>>("/api/v1/auth/guest", { guestUserId });
+export const guestLogin = () =>
+  api.post<ApiResponse<AuthUserDto>>("/api/v1/auth/guest");
 
 export const ssoLogin = (token: string) =>
   api.post<ApiResponse<AuthUserDto>>("/api/v1/auth/sso", { token });

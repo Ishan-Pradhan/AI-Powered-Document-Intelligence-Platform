@@ -496,22 +496,10 @@ router.route('/oauth/github/callback').get(githubAuthCallback);
  * /auth/guest:
  *   post:
  *     tags: [Widget Auth]
- *     summary: Create or resume a guest session
+ *     summary: Create a guest session
  *     description: |
- *       Used by the embeddable chat widget. If `guestUserId` is provided and the
- *       guest still exists, the same guest account is reused. Otherwise a new
- *       anonymous guest account is created.
+ *       Used by the embeddable chat widget. Creates a new anonymous guest account.
  *     security: []
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               guestUserId:
- *                 type: string
- *                 format: uuid
- *                 description: Optional — existing guest ID to resume
  *     responses:
  *       201:
  *         description: Guest session created — sets auth cookies

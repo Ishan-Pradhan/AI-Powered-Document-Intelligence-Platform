@@ -6,7 +6,7 @@ import {
   getChatMessages,
   type ChatMessage as ApiChatMessage,
 } from "@/api/chat";
-import { guestLogin, ssoLogin } from "@/api/auth";
+import { guestLogin, ssoLogin, getCurrentUser } from "@/api/auth";
 import { useAuthStore } from "@/store/auth.store";
 
 export type UiMessage = ApiChatMessage & {
@@ -18,14 +18,13 @@ interface UseWidgetChatProps {
   ssoToken?: string | null;
 }
 
-// Module-level cache to deduplicate concurrent guest logins (e.g., React StrictMode double mounts)
-let globalGuestAuthPromise: ReturnType<typeof guestLogin> | null = null;
+// Module-level cache to deduplicate concurrent auth checks (e.g., React StrictMode double mounts)
+let globalAuthCheckPromise: ReturnType<typeof getCurrentUser> | null = null;
 
 export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const clearUser = useAuthStore((state) => state.clearUser);
 
@@ -58,37 +57,25 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
           const res = await ssoLogin(ssoToken);
           activeUser = res.data.data;
         } else {
-          const storedGuestId = localStorage.getItem("docintel_guest_user_id");
-          if (!storedGuestId) {
-            // No stored session — clear stale Zustand state and defer guest login
-            // until the user sends their first message.
-            clearUser();
-            setAuthLoading(false);
-            return;
-          }
-
           try {
-            if (!globalGuestAuthPromise) {
-              globalGuestAuthPromise = guestLogin(storedGuestId)
+            if (!globalAuthCheckPromise) {
+              globalAuthCheckPromise = getCurrentUser()
                 .then((res) => {
-                  const user = res.data.data;
-                  if (user) {
-                    localStorage.setItem("docintel_guest_user_id", user.id);
-                  }
-                  globalGuestAuthPromise = null;
+                  globalAuthCheckPromise = null;
                   return res;
                 })
                 .catch((err) => {
-                  globalGuestAuthPromise = null;
-                  localStorage.removeItem("docintel_guest_user_id");
+                  globalAuthCheckPromise = null;
                   throw err;
                 });
             }
 
-            const res = await globalGuestAuthPromise;
+            const res = await globalAuthCheckPromise;
             activeUser = res.data.data;
-          } catch (loginErr) {
-            console.warn("Stored guest session expired or deleted, reverting to anonymous state:", loginErr);
+          } catch (err) {
+            // No active session — clear stale Zustand state and defer guest login
+            // until the user sends their first message.
+            clearUser();
             setAuthLoading(false);
             return;
           }
@@ -147,7 +134,6 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
         const res = await guestLogin();
         const activeUser = res.data.data;
         if (activeUser) {
-          localStorage.setItem("docintel_guest_user_id", activeUser.id);
           setUser(activeUser);
           sessionReady.current = true;
         }
@@ -211,14 +197,12 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
         console.warn("Guest session expired mid-session, creating a new guest and retrying...");
         try {
           sessionReady.current = false;
-          localStorage.removeItem("docintel_guest_user_id");
           clearUser();
           setActiveChatId(undefined);
 
           const res = await guestLogin();
           const activeUser = res.data.data;
           if (activeUser) {
-            localStorage.setItem("docintel_guest_user_id", activeUser.id);
             setUser(activeUser);
             sessionReady.current = true;
           }

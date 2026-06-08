@@ -14,34 +14,20 @@ import { ApiError } from '../utils/ApiError';
 
 export const guestLogin = asyncHandler(
   async (req: Request, res: Response): Promise<Response> => {
-    const { guestUserId } = req.body as { guestUserId?: string };
+    const guestId = crypto.randomUUID();
+    const guestEmail = `guest_${guestId}@guest.docintel.local`;
+    const guestPassword = crypto.randomBytes(32).toString('hex');
+    const hashedPassword = await hashPassword(guestPassword);
 
-    let guestUser;
-
-    if (guestUserId) {
-      guestUser = await userRepository.findById(guestUserId);
-      // Validate that it is indeed a guest user before reusing
-      if (guestUser && !guestUser.email.startsWith('guest_')) {
-        guestUser = null;
-      }
-    }
-
-    if (!guestUser) {
-      const guestId = crypto.randomUUID();
-      const guestEmail = `guest_${guestId}@guest.docintel.local`;
-      const guestPassword = crypto.randomBytes(32).toString('hex');
-      const hashedPassword = await hashPassword(guestPassword);
-
-      // Create guest user in standard Users table
-      guestUser = await userRepository.create({
-        name: `Guest User`,
-        email: guestEmail,
-        password: hashedPassword,
-        isVerified: true,
-        role: 'user',
-        authProvider: 'local',
-      });
-    }
+    // Create guest user in standard Users table
+    const guestUser = await userRepository.create({
+      name: `Guest User`,
+      email: guestEmail,
+      password: hashedPassword,
+      isVerified: true,
+      role: 'user',
+      authProvider: 'local',
+    });
 
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
       guestUser.id,
