@@ -47,7 +47,7 @@ const envSchema = z
 
     // LLM
     GROQ_API_KEY: z.string().min(1),
-    CHAT_MODEL: z.string().min(1).default('llama-3.1-8b-instant'),
+    CHAT_MODEL: z.string().min(1).default('openai/gpt-oss-20b'),
     GOOGLE_API_KEY: z.string().min(1),
 
     // URLs & Rate Limiting

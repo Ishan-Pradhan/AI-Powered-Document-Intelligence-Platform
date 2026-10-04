@@ -21,6 +21,7 @@ const llm = new ChatGroq({
   model: env.CHAT_MODEL || DEFAULT_LLM_MODEL,
   temperature: DEFAULT_LLM_TEMPERATURE,
   maxTokens: 600,
+  maxRetries: 1,
 });
 
 // prompt

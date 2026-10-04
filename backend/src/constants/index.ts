@@ -1,5 +1,5 @@
 // AI & Embedding Model Configurations
-export const DEFAULT_LLM_MODEL = 'llama-3.3-70b-versatile';
+export const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b';
 export const DEFAULT_LLM_TEMPERATURE = 0.2;
 export const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-2';
 
