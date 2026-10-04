@@ -112,11 +112,30 @@ export function useChatSession(chatId: string | undefined) {
       if (isNewChat || chatId !== response.chatId) {
         navigate(`/chat/${response.chatId}`, { replace: true });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send message:", error);
-      queryClient.setQueryData<UiMessage[]>(threadKey, (current = []) =>
-        current.filter((item) => item.id !== optimisticUserMessage.id),
-      );
+      const serverMessage =
+        error?.response?.data?.message ||
+        "Failed to generate answer. Please try again.";
+
+      const errorAssistantMessage: UiMessage = {
+        id: `assistant-error-${Date.now()}`,
+        chatId: chatId ?? "temp",
+        role: "assistant",
+        content: `⚠️ ${serverMessage}`,
+        sourcesUsed: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<UiMessage[]>(threadKey, (current = []) => [
+        ...current.map((item) =>
+          item.id === optimisticUserMessage.id
+            ? { ...item, optimistic: false }
+            : item,
+        ),
+        errorAssistantMessage,
+      ]);
     }
   };
 

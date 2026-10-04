@@ -90,6 +90,14 @@ export const generateAnswer = async (
   // 2. Sanitize context (PII protection)
   const sanitizedContext = redactPII(context);
 
+  // Clamp context to avoid Groq TPM limit (8000 TPM free tier)
+  const maxContextChars = 10000;
+  const safeContext =
+    sanitizedContext.length > maxContextChars
+      ? sanitizedContext.slice(0, maxContextChars) +
+        '\n\n[Context truncated for model limit]'
+      : sanitizedContext;
+
   // 3. Format history (last 2 turns only)
   const formattedHistory = history
     .slice(-4)
@@ -101,7 +109,7 @@ export const generateAnswer = async (
   // 4. Generate answer with LCEL chain
   const response = await chain.invoke({
     question,
-    context: sanitizedContext,
+    context: safeContext,
     history: formattedHistory,
   });
 

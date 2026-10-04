@@ -7,7 +7,8 @@ export const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-2';
 export const DEFAULT_VECTOR_SEARCH_LIMIT = 5;
 export const CHUNK_SIZE = 1000;
 export const OVERLAP = 200;
-export const ROWS_PER_CHUNK = 500;
+export const ROWS_PER_CHUNK = 25;
+export const MAX_CONTEXT_CHARS = 12000;
 
 // User roles
 export const USER_ROLES = {
