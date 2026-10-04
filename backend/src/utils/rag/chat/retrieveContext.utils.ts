@@ -18,17 +18,19 @@ export const retrieveContext = async (message: string, documentId?: string) => {
       DEFAULT_VECTOR_SEARCH_LIMIT,
     );
 
-    if (!matchedChunks.length) {
+    if (!matchedChunks.length && documentId) {
       matchedChunks = await chunksRepository.findChunksByDocumentId(
         documentId,
         DEFAULT_VECTOR_SEARCH_LIMIT,
       );
     }
-  } catch (err) {
-    matchedChunks = await chunksRepository.findChunksByDocumentId(
-      documentId,
-      DEFAULT_VECTOR_SEARCH_LIMIT,
-    );
+  } catch (_err) {
+    if (documentId) {
+      matchedChunks = await chunksRepository.findChunksByDocumentId(
+        documentId,
+        DEFAULT_VECTOR_SEARCH_LIMIT,
+      );
+    }
   }
 
   const context = matchedChunks.map((c) => (c as { text: string }).text).join('\n\n---\n\n');

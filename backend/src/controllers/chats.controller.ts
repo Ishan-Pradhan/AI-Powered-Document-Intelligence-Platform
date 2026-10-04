@@ -60,10 +60,14 @@ export const chatWithDocument = asyncHandler(
     const answer = await generateAnswer(message, context, history);
 
     // 6. sources
-    const sourcesUsed = matchedChunks.map((c) => ({
+    const sourcesUsed = matchedChunks.map((c: any) => ({
       chunkId: c.id,
-      textPreview: c.text.slice(0, 100),
-      documentTitle: c.documentTitle || 'Unknown Document',
+      textPreview: c.text?.slice(0, 100) || '',
+      documentTitle:
+        c.documentTitle ||
+        c.document?.title ||
+        c.get?.('document')?.title ||
+        'Unknown Document',
     }));
 
     // 7. store assistant message
