@@ -80,11 +80,6 @@ export function WidgetChatBubble({ message }: WidgetChatBubbleProps) {
       >
         <MarkdownContent content={message.content} isUser={!isAssistant} />
         {isAssistant && <SourcePills sources={message.sourcesUsed} />}
-        {message.optimistic && (
-          <p className="mt-1 text-[9px] font-medium uppercase tracking-widest text-primary-200/80">
-            Sending...
-          </p>
-        )}
       </div>
 
       {!isAssistant && <MessageAvatar role={message.role} />}

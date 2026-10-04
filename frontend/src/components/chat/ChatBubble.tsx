@@ -77,11 +77,6 @@ export function ChatBubble({ message }: ChatBubbleProps) {
       >
         <MarkdownContent content={message.content} isUser={!isAssistant} />
         {isAssistant && <SourcePills sources={message.sourcesUsed} />}
-        {message.optimistic && (
-          <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-            Sending...
-          </p>
-        )}
       </div>
 
       {!isAssistant && <MessageAvatar role={message.role} />}
