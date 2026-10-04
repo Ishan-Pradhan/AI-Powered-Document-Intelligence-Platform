@@ -19,25 +19,30 @@ app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-const allowedOrigins = [
-  process.env.FRONTEND_URL?.replace(/\/$/, ''),
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000',
-].filter(Boolean) as string[];
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/$/, ''))
+  .concat([
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+  ])
+  .filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (
+      const isAllowed =
         allowedOrigins.includes(origin) ||
-        process.env.NODE_ENV !== 'production'
-      ) {
+        process.env.NODE_ENV !== 'production' ||
+        origin.endsWith('.vercel.app');
+
+      if (isAllowed) {
         return callback(null, true);
       }
-      return callback(new Error('Not allowed by CORS'));
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
   }),
