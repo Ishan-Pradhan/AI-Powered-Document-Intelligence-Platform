@@ -38,7 +38,11 @@ export const verifyEmail = asyncHandler(
       throw new ApiError(404, 'User not found');
     }
 
-    const redirectUrl = `${env.FRONTEND_URL?.replace(/\/$/, '')}/verify-success`;
+    const frontendUrl = (env.FRONTEND_URL || 'http://localhost:5173').replace(
+      /\/$/,
+      '',
+    );
+    const redirectUrl = `${frontendUrl}/verify-success`;
 
     // idempotent update
     if (!user.isVerified) {
