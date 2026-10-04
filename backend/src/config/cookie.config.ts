@@ -2,12 +2,16 @@ import { CookieOptions } from 'express';
 import { parseTimeToMs } from '../utils/parseTime.utils';
 import { env } from './env';
 
-const isProduction = env.NODE_ENV === 'production';
+const isSecureEnvironment =
+  env.NODE_ENV === 'production' ||
+  Boolean(process.env.RENDER) ||
+  Boolean(env.BACKEND_URL?.startsWith('https')) ||
+  Boolean(env.FRONTEND_URL?.startsWith('https'));
 
 export const baseCookieOptions = (): CookieOptions => ({
   httpOnly: true,
-  secure: isProduction,
-  sameSite: isProduction ? 'none' : 'lax',
+  secure: isSecureEnvironment,
+  sameSite: isSecureEnvironment ? 'none' : 'lax',
 });
 
 export const getRefreshTokenCookieOptions = (): CookieOptions => ({
