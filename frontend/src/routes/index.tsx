@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 
 // Eagerly loaded (auth + layout shells — small, needed immediately)
 import AuthLayout from "../pages/Auth/AuthLayout";
@@ -7,6 +7,7 @@ import IsLoggedIn from "./privateRoutes/isLoggedIn";
 import Loading from "@/components/loading/Loading";
 
 // Lazy-loaded pages
+const LandingPage = lazy(() => import("@/pages/Landing/LandingPage"));
 const LoginPage = lazy(() => import("../pages/Auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/Auth/RegisterPage"));
 const EmailVerificationPage = lazy(() => import("@/pages/Auth/EmailVerificationPage"));
@@ -33,6 +34,10 @@ const withSuspense = (element: React.ReactNode) => (
 
 export const router = createBrowserRouter([
   {
+    path: "/",
+    element: withSuspense(<LandingPage />),
+  },
+  {
     element: <AuthLayout />,
     children: [
       { path: "/login", element: withSuspense(<LoginPage />) },
@@ -46,10 +51,6 @@ export const router = createBrowserRouter([
   {
     element: <IsLoggedIn />,
     children: [
-      {
-        path: "/",
-        element: <Navigate to="/chat" replace />,
-      },
       {
         element: withSuspense(<ChatLayout />),
         children: [
