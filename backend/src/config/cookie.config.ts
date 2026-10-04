@@ -7,7 +7,7 @@ const isProduction = env.NODE_ENV === 'production';
 export const baseCookieOptions = (): CookieOptions => ({
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? 'strict' : 'lax',
+  sameSite: isProduction ? 'none' : 'lax',
 });
 
 export const getRefreshTokenCookieOptions = (): CookieOptions => ({

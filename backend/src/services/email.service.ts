@@ -1,5 +1,8 @@
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
+
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 const getTransporter = () => {
   const host = env.EMAIL_HOST;
@@ -9,7 +12,7 @@ const getTransporter = () => {
 
   if (!host || !port || !user || !pass) {
     throw new Error(
-      'Missing SMTP env vars (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS)',
+      'Missing email config. Provide RESEND_API_KEY or SMTP vars (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS)',
     );
   }
 
@@ -21,20 +24,48 @@ const getTransporter = () => {
   });
 };
 
-// Send email verification link
-export const sendVerificationEmail = async (to: string, token: string) => {
-  const backendUrl = env.PORT
-    ? `http://localhost:${env.PORT}`
-    : 'http://localhost:8080';
+const sendMailPayload = async ({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}) => {
+  const from = env.EMAIL_FROM || env.EMAIL_USER || 'no-reply@docintel.ai';
 
-  const verifyLink = `${backendUrl}/api/v1/auth/verify-email?token=${token}`;
-
-  const from = env.EMAIL_FROM || env.EMAIL_USER;
+  if (resend) {
+    const { error } = await resend.emails.send({
+      from,
+      to,
+      subject,
+      html,
+    });
+    if (error) {
+      throw new Error(`Resend email delivery failed: ${error.message}`);
+    }
+    return;
+  }
 
   const transporter = getTransporter();
-
   await transporter.sendMail({
     from,
+    to,
+    subject,
+    html,
+  });
+};
+
+// Send email verification link
+export const sendVerificationEmail = async (to: string, token: string) => {
+  const backendUrl =
+    env.BACKEND_URL ||
+    (env.PORT ? `http://localhost:${env.PORT}` : 'http://localhost:8080');
+
+  const verifyLink = `${backendUrl.replace(/\/$/, '')}/api/v1/auth/verify-email?token=${token}`;
+
+  await sendMailPayload({
     to,
     subject: 'Verify your email',
     html: verifyEmailTemplate(verifyLink),
@@ -48,11 +79,7 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
   const frontendUrl = env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
 
-  const from = env.EMAIL_FROM || env.EMAIL_USER;
-  const transporter = getTransporter();
-
-  await transporter.sendMail({
-    from,
+  await sendMailPayload({
     to,
     subject: 'Reset your password',
     html: resetPasswordTemplate(resetLink),

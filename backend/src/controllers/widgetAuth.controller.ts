@@ -13,7 +13,7 @@ import { asyncHandler } from '../utils/AsyncHandler';
 import { ApiError } from '../utils/ApiError';
 
 export const guestLogin = asyncHandler(
-  async (req: Request, res: Response): Promise<Response> => {
+  async (_req: Request, res: Response): Promise<Response> => {
     const guestId = crypto.randomUUID();
     const guestEmail = `guest_${guestId}@guest.docintel.local`;
     const guestPassword = crypto.randomBytes(32).toString('hex');

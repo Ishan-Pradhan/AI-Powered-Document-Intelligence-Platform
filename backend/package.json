@@ -58,6 +58,7 @@
     "pdf-parse-new": "^2.1.0",
     "pg": "^8.20.0",
     "pg-hstore": "^2.3.4",
+    "resend": "^6.32.0",
     "sequelize": "^6.37.8",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",

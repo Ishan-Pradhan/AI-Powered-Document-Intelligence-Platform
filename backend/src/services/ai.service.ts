@@ -18,8 +18,9 @@ const redactPII = (text: string): string => {
 // llm
 const llm = new ChatGroq({
   apiKey: env.GROQ_API_KEY,
-  model: DEFAULT_LLM_MODEL,
+  model: env.CHAT_MODEL || DEFAULT_LLM_MODEL,
   temperature: DEFAULT_LLM_TEMPERATURE,
+  maxTokens: 600,
 });
 
 // prompt

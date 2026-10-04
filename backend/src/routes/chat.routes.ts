@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { isAdmin, verifyJWT } from '../middlewares/auth.middleware';
 import { upload } from '../middlewares/upload.middleware';
+import { chatLimiter } from '../middlewares/rateLimiter.middleware';
 import {
   deleteDocument,
   getAllDocuments,
@@ -276,7 +277,12 @@ router
 router
   .route('/chats')
   .get(verifyJWT, getUserChats)
-  .post(verifyJWT, validate(chatWithDocumentSchema), chatWithDocument);
+  .post(
+    verifyJWT,
+    chatLimiter,
+    validate(chatWithDocumentSchema),
+    chatWithDocument,
+  );
 
 /**
  * @swagger
