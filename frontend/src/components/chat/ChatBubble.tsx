@@ -2,6 +2,7 @@ import { Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { type ChatMessage as ApiChatMessage, type ChatSource } from "@/api/chat";
+import { MarkdownContent } from "./MarkdownContent";
 
 export type UiMessage = ApiChatMessage & {
   optimistic?: boolean;
@@ -74,9 +75,7 @@ export function ChatBubble({ message }: ChatBubbleProps) {
           message.optimistic && "opacity-80",
         )}
       >
-        <p className="whitespace-pre-wrap text-sm leading-6">
-          {message.content}
-        </p>
+        <MarkdownContent content={message.content} isUser={!isAssistant} />
         {isAssistant && <SourcePills sources={message.sourcesUsed} />}
         {message.optimistic && (
           <p className="mt-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">

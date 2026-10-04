@@ -20,7 +20,7 @@ const llm = new ChatGroq({
   apiKey: env.GROQ_API_KEY,
   model: env.CHAT_MODEL || DEFAULT_LLM_MODEL,
   temperature: DEFAULT_LLM_TEMPERATURE,
-  maxTokens: 600,
+  maxTokens: 2048,
   maxRetries: 1,
 });
 

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { type ChatSource } from "@/api/chat";
 import { type UiMessage } from "@/hooks/chats/useWidgetChat";
+import { MarkdownContent } from "../MarkdownContent";
 
 interface MessageAvatarProps {
   role: UiMessage["role"];
@@ -77,9 +78,7 @@ export function WidgetChatBubble({ message }: WidgetChatBubbleProps) {
           message.optimistic && "opacity-80 animate-pulse",
         )}
       >
-        <p className="whitespace-pre-wrap text-[13px] leading-5">
-          {message.content}
-        </p>
+        <MarkdownContent content={message.content} isUser={!isAssistant} />
         {isAssistant && <SourcePills sources={message.sourcesUsed} />}
         {message.optimistic && (
           <p className="mt-1 text-[9px] font-medium uppercase tracking-widest text-primary-200/80">
