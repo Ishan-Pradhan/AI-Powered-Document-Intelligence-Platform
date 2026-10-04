@@ -200,7 +200,7 @@ export const logoutUser = asyncHandler(
 // REFRESH ACCESS TOKEN
 export const refreshAccessToken = asyncHandler(
   async (req: Request, res: Response): Promise<Response> => {
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (!refreshToken) {
       throw new ApiError(401, 'Unauthorized: No refresh token provided');

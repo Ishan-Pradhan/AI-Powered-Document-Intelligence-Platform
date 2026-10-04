@@ -43,8 +43,20 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Prevent infinite loop on refresh-access-token failure
-    if (originalRequest.url?.includes("/api/v1/auth/refresh-access-token")) {
+    // Do NOT attempt token refresh on auth endpoints (login, register, forgot-password, etc.)
+    // If these endpoints return 401, it means invalid credentials, not an expired access token.
+    const requestUrl = originalRequest.url || "";
+    const isAuthRoute =
+      requestUrl.includes("/api/v1/auth/login") ||
+      requestUrl.includes("/api/v1/auth/register") ||
+      requestUrl.includes("/api/v1/auth/refresh-access-token") ||
+      requestUrl.includes("/api/v1/auth/forgot-password") ||
+      requestUrl.includes("/api/v1/auth/reset-password") ||
+      requestUrl.includes("/api/v1/auth/resend-verification-email") ||
+      requestUrl.includes("/api/v1/auth/guest") ||
+      requestUrl.includes("/api/v1/auth/sso");
+
+    if (isAuthRoute) {
       return Promise.reject(error);
     }
 
