@@ -1,7 +1,6 @@
 import { Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
-import { type ChatSource } from "@/api/chat";
 import { type UiMessage } from "@/hooks/chats/useWidgetChat";
 import { MarkdownContent } from "../MarkdownContent";
 
@@ -32,27 +31,6 @@ function MessageAvatar({ role }: MessageAvatarProps) {
   );
 }
 
-interface SourcePillsProps {
-  sources?: ChatSource[];
-}
-
-function SourcePills({ sources }: SourcePillsProps) {
-  if (!sources?.length) return null;
-
-  return (
-    <div className="mt-2 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-bottom-1 duration-300">
-      {sources.slice(0, 3).map((source) => (
-        <span
-          key={source.chunkId}
-          className="rounded-md border border-border bg-background/50 backdrop-blur-xs px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-all hover:bg-muted"
-        >
-          {source.documentTitle}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 interface WidgetChatBubbleProps {
   message: UiMessage;
 }
@@ -79,7 +57,6 @@ export function WidgetChatBubble({ message }: WidgetChatBubbleProps) {
         )}
       >
         <MarkdownContent content={message.content} isUser={!isAssistant} />
-        {isAssistant && <SourcePills sources={message.sourcesUsed} />}
       </div>
 
       {!isAssistant && <MessageAvatar role={message.role} />}

@@ -40,7 +40,7 @@ If the user says hello, hi, hey, good morning, bye, goodbye, thank you, or any c
 
 ### 2. Document Questions
 - Answer ONLY from the CONTEXT provided below.
-- If the answer is not present in the context, respond exactly with: "I couldn't find that information in the uploaded documents. Please check if the relevant document has been uploaded."
+- If the answer is not present in the context, respond exactly with: "{notFound}"
 - Never guess or fabricate data.
 
 ### 3. Numerical & Tabular Data
@@ -81,10 +81,17 @@ export const generateAnswer = async (
   question: string,
   context: string,
   history: { role: string; content: string }[],
+  widget = false,
 ): Promise<string> => {
+  const notFound = widget
+    ? "Sorry, I don't know the answer to that."
+    : "I couldn't find that information in the uploaded documents. Please check if the relevant document has been uploaded.";
+
   // 1. guard empty context
   if (!context || context.trim().length === 0) {
-    return "I don't have that information in my current knowledge base.";
+    return widget
+      ? notFound
+      : "I don't have that information in my current knowledge base.";
   }
 
   // 2. Sanitize context (PII protection)
@@ -111,6 +118,7 @@ export const generateAnswer = async (
     question,
     context: safeContext,
     history: formattedHistory,
+    notFound,
   });
 
   return response;

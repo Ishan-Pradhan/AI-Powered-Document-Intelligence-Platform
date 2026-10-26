@@ -36,7 +36,8 @@ export function useWidgetChat({ documentId, ssoToken }: UseWidgetChatProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const sendMessageMutation = useMutation({
-    mutationFn: sendChatMessage,
+    mutationFn: (p: Parameters<typeof sendChatMessage>[0]) =>
+      sendChatMessage({ ...p, widget: true }),
   });
 
   const isRunning = useRef(false);

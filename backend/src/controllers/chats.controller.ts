@@ -13,7 +13,7 @@ import { SemanticSearchResult } from '../types/rag.types';
 // CHAT WITH DOCUMENT CONTEXT
 export const chatWithDocument = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<Response> => {
-    const { chatId, message, documentId } = req.body;
+    const { chatId, message, documentId, widget } = req.body;
 
     if (!message) {
       throw new ApiError(400, 'message is required');
@@ -57,10 +57,10 @@ export const chatWithDocument = asyncHandler(
     };
 
     // 5. LLM response
-    const answer = await generateAnswer(message, context, history);
+    const answer = await generateAnswer(message, context, history, !!widget);
 
-    // 6. sources
-    const sourcesUsed = matchedChunks.map((c: any) => ({
+    // 6. sources (never exposed to widget visitors)
+    const sourcesUsed = (widget ? [] : matchedChunks).map((c: any) => ({
       chunkId: c.id,
       textPreview: c.text?.slice(0, 100) || '',
       documentTitle:

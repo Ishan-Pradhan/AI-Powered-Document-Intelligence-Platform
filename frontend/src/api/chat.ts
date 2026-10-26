@@ -97,6 +97,7 @@ export const sendChatMessage = async (payload: {
   message: string;
   chatId?: string;
   documentId?: string;
+  widget?: boolean;
 }): Promise<ChatThreadResponse> => {
   const res = await api.post<ApiResponse<ChatThreadResponse>>(
     "/api/v1/chat/chats",
